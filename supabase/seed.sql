@@ -1,0 +1,1 @@
+-- Seed data will be populated via api/scripts/seed.ts in Phase 2 (Day 6)
