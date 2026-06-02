@@ -7,25 +7,24 @@ import {
   type CandidateCapabilityAssessment,
   type CandidateProfileInput,
 } from '../validators/index.js'
+import { generateGeminiText } from './gemini.js'
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
-
-// ── Prompts ────────────────────────────────────────────────────────────────
 
 const EXTRACT_ROLE_CAPABILITY_SYSTEM_PROMPT = `
 You are a capability mapping specialist. Your job is to analyse a job description and extract the functional capabilities required to perform the role effectively.
 
 RULES:
-1. Extract what the person needs to DO — not what job title they should have held. A Data Analyst role requires Python, SQL, stakeholder communication, and business problem framing. Extract those, not "must have been a Data Analyst before."
+1. Extract what the person needs to DO - not what job title they should have held. A Data Analyst role requires Python, SQL, stakeholder communication, and business problem framing. Extract those, not "must have been a Data Analyst before."
 2. Map each capability to the correct tier:
    - Tier 1 (hard/technical): specific technical skills, tools, languages, domain knowledge
-   - Tier 2 (transferable): cross-functional skills that work across roles — communication, project management, data literacy, structured thinking
+   - Tier 2 (transferable): cross-functional skills that work across roles - communication, project management, data literacy, structured thinking
    - Tier 3 (contextual/behavioural): ways of working, stakeholder management, cultural behaviours
    - Tier 4 (trajectory): growth orientation, learning velocity, ambition signals, adaptability
-3. required_score (0.0–1.0): how well the candidate must demonstrate this capability. Senior roles skew higher; entry roles can accept 0.5–0.6 with growth potential.
-4. weight (float): relative importance. 0.5 = minor, 1.0 = normal, 1.5 = important, 2.0 = critical.
+3. required_score (0.0-1.0): how well the candidate must demonstrate this capability. Senior roles skew higher; entry roles can accept 0.5-0.6 with growth potential.
+4. weight (float): relative importance. 0.5 = minor, 1.0 = normal, 1.5 = important, 2.0 = critical. Never exceed 2.0.
 5. must_have: true only for genuinely non-negotiable requirements. Max 3 per role. Use sparingly.
-6. Extract 8–15 dimensions. Cover all four tiers. Do not pad with generic filler.
+6. Extract 8-15 dimensions. Cover all four tiers. Do not pad with generic filler.
 
 Respond only with valid JSON. No preamble, no explanation, no markdown code fences.
 
@@ -44,19 +43,19 @@ Output format:
 const EXTRACT_CANDIDATE_CAPABILITY_SYSTEM_PROMPT = `
 You are a capability assessor specialised in identifying latent potential in non-traditional career profiles.
 
-Your job is to build an honest capability profile from everything you know about the candidate — NOT just their current job title.
+Your job is to build an honest capability profile from everything you know about the candidate - NOT just their current job title.
 
 RULES:
-1. Underemployment: if underemployment_flag is true, a degree-qualified person is working below their qualification level. Weight their formal education and self-directed work (projects, certifications, side work) significantly more than their current job title. The title is not a ceiling — it is an accident of circumstance.
+1. Underemployment: if underemployment_flag is true, a degree-qualified person is working below their qualification level. Weight their formal education and self-directed work (projects, certifications, side work) significantly more than their current job title. The title is not a ceiling - it is an accident of circumstance.
 2. Confidence levels must be accurate:
    - "verified": backed by a degree, certification, or demonstrated project output
    - "inferred": implied by context (e.g., a CS graduate likely understands algorithms even if unlisted)
-   - "self_reported": stated by the candidate without external backing — take at face value but note it
+   - "self_reported": stated by the candidate without external backing - take at face value but note it
 3. Tier 4 (trajectory) MUST reflect BOTH stated career_intent AND revealed preference from skills, projects, and learning choices. A candidate who has self-studied Python AND states career_intent of "data analytics" has a strong, coherent tier 4 signal.
 4. Do not penalise candidates for not having done the specific job before. Assess capability, not past job titles.
-5. evidence_source: be specific — cite what in the profile led to this score.
+5. evidence_source: be specific - cite what in the profile led to this score.
 6. underemployment_signal: true if the candidate's formal qualifications and/or self-directed capabilities meaningfully exceed what their current job title suggests.
-7. tier_X_coverage scores (0–1): average capability coverage for dimensions in that tier.
+7. tier_X_coverage scores (0-1): average capability coverage for dimensions in that tier.
 
 Respond only with valid JSON. No preamble, no explanation, no markdown code fences.
 
@@ -78,8 +77,6 @@ Output format:
   "tier_4_trajectory_score": 0.84
 }
 `.trim()
-
-// ── Helpers ────────────────────────────────────────────────────────────────
 
 function formatProfile(p: CandidateProfileInput): string {
   const skills = Array.isArray(p.skills)
@@ -114,7 +111,7 @@ CURRENT SITUATION
   Job title: ${p.current_job_title ?? 'Not specified'}
   Employer: ${p.current_employer ?? 'Not specified'}
   Years of experience: ${p.years_of_experience ?? 'Not specified'}
-  Underemployment flag: ${p.underemployment_flag ? 'YES — candidate is working below qualification level' : 'No'}
+  Underemployment flag: ${p.underemployment_flag ? 'YES - candidate is working below qualification level' : 'No'}
 
 CAREER INTENT
   "${p.career_intent ?? 'Not stated'}"
@@ -130,8 +127,6 @@ ${certs}
 `.trim()
 }
 
-// ── Exports ────────────────────────────────────────────────────────────────
-
 export async function extractRoleCapability(
   descriptionRaw: string,
   contextNotes: string | null,
@@ -143,8 +138,8 @@ export async function extractRoleCapability(
   })
 
   const prompt = `Job description:\n${descriptionRaw}\n\nContext notes:\n${contextNotes ?? 'None provided'}`
-  const result = await model.generateContent(prompt)
-  return parseAIResponse(result.response.text(), RoleCapabilityDimensionArraySchema, 'extractRoleCapability')
+  const text = await generateGeminiText('extractRoleCapability', () => model.generateContent(prompt))
+  return parseAIResponse(text, RoleCapabilityDimensionArraySchema, 'extractRoleCapability')
 }
 
 export async function extractCandidateCapability(
@@ -156,6 +151,8 @@ export async function extractCandidateCapability(
     generationConfig: { temperature: 0.1, responseMimeType: 'application/json' },
   })
 
-  const result = await model.generateContent(formatProfile(profile))
-  return parseAIResponse(result.response.text(), CandidateCapabilityAssessmentSchema, 'extractCandidateCapability')
+  const text = await generateGeminiText('extractCandidateCapability', () =>
+    model.generateContent(formatProfile(profile)),
+  )
+  return parseAIResponse(text, CandidateCapabilityAssessmentSchema, 'extractCandidateCapability')
 }

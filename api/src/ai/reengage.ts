@@ -13,7 +13,7 @@ You are comparing two capability assessments for the same candidate to identify 
 
 RULES:
 1. Only include dimensions where delta > 0.1 (current_score - previous_score > 0.1). Smaller changes are noise.
-2. Focus on dimensions that were originally identified as gaps between the candidate and the role — those are the ones that matter for re-engagement.
+2. Focus on dimensions that were originally identified as gaps between the candidate and the role - those are the ones that matter for re-engagement.
 3. Use the NEW assessment's confidence level for each dimension included.
 4. delta = current_score - previous_score (must be positive and > 0.1 to be included).
 5. If no dimensions meet the threshold, return an empty array [].
