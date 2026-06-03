@@ -57,10 +57,6 @@ interface RoleDimension {
   must_have: boolean
 }
 
-interface OutreachMessage {
-  id: string
-  draft_text: string
-}
 
 const CONFIDENCE_COLOR: Record<string, string> = {
   verified: 'text-green-600 bg-green-50 border-green-200',
@@ -95,7 +91,6 @@ function DimensionRow({ d, type }: { d: Dimension; type: 'strong' | 'partial' | 
 function MatchDetailPage() {
   const { roleId, matchId } = Route.useParams()
   const [match, setMatch] = useState<MatchDetail | null>(null)
-  const [outreach, setOutreach] = useState<OutreachMessage | null>(null)
   const [loading, setLoading] = useState(true)
   const [expressing, setExpressing] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -110,12 +105,10 @@ function MatchDetailPage() {
   async function handleExpressInterest() {
     setExpressing(true)
     try {
-      const msg = await api.post<OutreachMessage>(`/match/${matchId}/interest`, {})
-      setOutreach(msg)
-      setMatch((prev) => prev ? { ...prev, status: 'notified' } : prev)
+      await api.post<OutreachMessage>(`/match/${matchId}/interest`, {})
+      await navigate({ to: '/employer/role/$roleId/pool/$matchId/outreach', params: { roleId, matchId } })
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to express interest')
-    } finally {
       setExpressing(false)
     }
   }
@@ -232,23 +225,6 @@ function MatchDetailPage() {
           )}
         </div>
 
-        {/* Outreach draft */}
-        {outreach && (
-          <div className="bg-white border border-gray-200 rounded-xl p-6">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-sm font-semibold text-gray-900">AI-drafted outreach</h2>
-              <span className={`text-xs ${outreach.draft_text.length > 400 ? 'text-red-500' : 'text-gray-400'}`}>
-                {outreach.draft_text.length} / 400
-              </span>
-            </div>
-            <p className="text-sm text-gray-700 leading-relaxed bg-gray-50 rounded-lg p-4 border border-gray-100">
-              {outreach.draft_text}
-            </p>
-            <p className="text-xs text-gray-400 mt-2">
-              This message will be sent to the candidate once they accept the match.
-            </p>
-          </div>
-        )}
       </main>
     </div>
   )

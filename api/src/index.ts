@@ -5,6 +5,8 @@ import { logger } from 'hono/logger'
 import { roleRouter } from './routes/role.js'
 import { matchRouter } from './routes/match.js'
 import { candidateRouter } from './routes/candidate.js'
+import { outreachRouter } from './routes/outreach.js'
+import { reengageRouter } from './routes/reengage.js'
 
 const app = new Hono()
 
@@ -21,6 +23,8 @@ app.get('/health', (c) => c.json({ ok: true, ts: Date.now() }))
 app.route('/role', roleRouter)
 app.route('/match', matchRouter)
 app.route('/candidate', candidateRouter)
+app.route('/outreach', outreachRouter)
+app.route('/reengage', reengageRouter)
 
 const port = parseInt(process.env.PORT ?? '3000')
 
