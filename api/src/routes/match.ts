@@ -180,17 +180,29 @@ matchRouter.get('/', async (c) => {
         ats_bypass_reasoning, employer_facing_text, candidate_facing_text,
         bridge_suggestion, model_version
       ),
-      candidate_profile(
-        degree, field_of_study, current_job_title, current_employer,
-        years_of_experience, underemployment_flag, visibility_status,
-        candidate(id, name, email)
-      )
+      candidate(id, name, email)
     `)
     .eq('role_id', role_id)
     .order('overall_score', { ascending: false })
 
   if (error) throw new HTTPException(500, { message: error.message })
-  return c.json(matches ?? [])
+  if (!matches?.length) return c.json([])
+
+  // Fetch profiles separately — three-level PostgREST embeds are unreliable
+  const candidateIds = matches.map((m) => m.candidate_id as string)
+  const { data: profiles } = await db
+    .from('candidate_profile')
+    .select('candidate_id, degree, field_of_study, current_job_title, current_employer, years_of_experience, underemployment_flag')
+    .in('candidate_id', candidateIds)
+
+  const profileMap = new Map((profiles ?? []).map((p) => [p.candidate_id, p]))
+
+  const enriched = matches.map((m) => ({
+    ...m,
+    candidate_profile: profileMap.get(m.candidate_id as string) ?? null,
+  }))
+
+  return c.json(enriched)
 })
 
 // Get a single match with full detail
@@ -203,12 +215,16 @@ matchRouter.get('/:id', async (c) => {
     .select(`
       *,
       match_explanation(*),
-      candidate_profile(
-        *, candidate(id, name, email)
+      candidate(
+        id, name, email,
+        candidate_profile(
+          degree, field_of_study, current_job_title, current_employer,
+          years_of_experience, underemployment_flag
+        )
       ),
       capability_assessment(dimensions, underemployment_signal),
       role(title, description_raw, context_notes, seniority_level, location_type),
-      role_capability_map: role_capability_map!match_map_id_fkey(dimensions, employer_edited)
+      role_capability_map(dimensions, employer_edited)
     `)
     .eq('id', id)
     .single()
@@ -228,9 +244,9 @@ matchRouter.post('/:id/interest', async (c) => {
     .select(`
       *,
       match_explanation(strong_dimensions, employer_facing_text),
-      candidate_profile(
-        degree, field_of_study, current_job_title,
-        candidate(id, name)
+      candidate(
+        id, name,
+        candidate_profile(degree, field_of_study, current_job_title)
       ),
       role(title, context_notes)
     `)
@@ -245,11 +261,9 @@ matchRouter.post('/:id/interest', async (c) => {
   const explanation = Array.isArray(match.match_explanation)
     ? match.match_explanation[0]
     : match.match_explanation
-  const profile = Array.isArray(match.candidate_profile)
-    ? match.candidate_profile[0]
-    : match.candidate_profile
+  const candidate = Array.isArray(match.candidate) ? match.candidate[0] : match.candidate as { id: string; name: string; candidate_profile: Array<{ degree: string | null; field_of_study: string | null; current_job_title: string | null }> } | null
+  const profile = candidate?.candidate_profile?.[0] ?? null
   const role = Array.isArray(match.role) ? match.role[0] : match.role
-  const candidate = profile?.candidate as { id: string; name: string } | null
 
   // Draft outreach
   const outreach = await draftOutreach({

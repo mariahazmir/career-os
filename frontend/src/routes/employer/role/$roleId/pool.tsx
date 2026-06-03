@@ -19,13 +19,13 @@ interface MatchCandidate {
     strong_dimensions: Array<{ name: string }>
     ats_bypass_reasoning?: string
   }>
-  candidate_profile: Array<{
+  candidate: { id: string; name: string; email: string } | null
+  candidate_profile: {
     current_job_title: string | null
     degree: string | null
     field_of_study: string | null
     underemployment_flag: boolean
-    candidate: { id: string; name: string }
-  }>
+  } | null
 }
 
 function MatchStrengthBar({ score }: { score: number }) {
@@ -43,8 +43,8 @@ function MatchStrengthBar({ score }: { score: number }) {
 
 function CandidateCard({ match, roleId }: { match: MatchCandidate; roleId: string }) {
   const explanation = match.match_explanation?.[0]
-  const profile = match.candidate_profile?.[0]
-  const candidate = profile?.candidate
+  const candidate = match.candidate
+  const profile = match.candidate_profile
 
   const top3 = explanation?.strong_dimensions?.slice(0, 3).map((d) => d.name) ?? []
   const preview = explanation?.employer_facing_text?.slice(0, 130)

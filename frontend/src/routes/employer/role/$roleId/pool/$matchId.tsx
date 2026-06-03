@@ -23,17 +23,21 @@ interface MatchDetail {
     candidate_facing_text: string
     bridge_suggestion?: string
   }
-  candidate_profile: {
-    degree: string | null
-    field_of_study: string | null
-    current_job_title: string | null
-    current_employer: string | null
-    years_of_experience: number | null
-    underemployment_flag: boolean
-    candidate: { id: string; name: string; email: string }
+  candidate: {
+    id: string
+    name: string
+    email: string
+    candidate_profile: Array<{
+      degree: string | null
+      field_of_study: string | null
+      current_job_title: string | null
+      current_employer: string | null
+      years_of_experience: number | null
+      underemployment_flag: boolean
+    }>
   }
   role: { title: string; context_notes: string | null }
-  role_capability_map: { dimensions: RoleDimension[] }
+  role_capability_map: Array<{ dimensions: RoleDimension[] }>
 }
 
 interface Dimension {
@@ -129,8 +133,8 @@ function MatchDetailPage() {
   )
 
   const exp = match.match_explanation
-  const profile = match.candidate_profile
-  const candidate = profile.candidate
+  const candidate = match.candidate
+  const profile = candidate.candidate_profile[0]
   const score = Math.round(match.overall_score * 100)
 
   return (
@@ -145,6 +149,7 @@ function MatchDetailPage() {
         </div>
         {match.status === 'pending' ? (
           <button
+            type="button"
             onClick={handleExpressInterest}
             disabled={expressing}
             className="bg-indigo-600 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors"
