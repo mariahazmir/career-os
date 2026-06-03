@@ -4,6 +4,7 @@ import { cors } from 'hono/cors'
 import { logger } from 'hono/logger'
 import { roleRouter } from './routes/role.js'
 import { matchRouter } from './routes/match.js'
+import { candidateRouter } from './routes/candidate.js'
 
 const app = new Hono()
 
@@ -19,6 +20,7 @@ app.get('/health', (c) => c.json({ ok: true, ts: Date.now() }))
 
 app.route('/role', roleRouter)
 app.route('/match', matchRouter)
+app.route('/candidate', candidateRouter)
 
 const port = parseInt(process.env.PORT ?? '3000')
 

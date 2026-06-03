@@ -11,6 +11,29 @@ export async function getAuthUser(c: Context) {
   return user
 }
 
+export async function getCandidateContext(c: Context) {
+  const user = await getAuthUser(c)
+
+  const { data: existing } = await db
+    .from('candidate')
+    .select('id, name, email')
+    .eq('email', user.email!)
+    .single()
+
+  if (existing) return { user, candidate: existing }
+
+  // Auto-create candidate row from auth metadata on first call
+  const name = (user.user_metadata?.name as string | undefined) ?? user.email ?? 'Unknown'
+  const { data: created, error } = await db
+    .from('candidate')
+    .insert({ email: user.email!, name })
+    .select()
+    .single()
+
+  if (error || !created) throw new HTTPException(500, { message: 'Failed to create candidate record' })
+  return { user, candidate: created }
+}
+
 export async function getEmployerContext(c: Context) {
   const user = await getAuthUser(c)
 
