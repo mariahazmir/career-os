@@ -14,6 +14,10 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as EmployerDashboardRouteImport } from './routes/employer/dashboard'
 import { Route as CandidateDashboardRouteImport } from './routes/candidate/dashboard'
+import { Route as EmployerRoleNewRouteImport } from './routes/employer/role/new'
+import { Route as EmployerRoleRoleIdPoolRouteImport } from './routes/employer/role/$roleId/pool'
+import { Route as EmployerRoleRoleIdCapabilityMapRouteImport } from './routes/employer/role/$roleId/capability-map'
+import { Route as EmployerRoleRoleIdPoolMatchIdRouteImport } from './routes/employer/role/$roleId/pool/$matchId'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -40,6 +44,28 @@ const CandidateDashboardRoute = CandidateDashboardRouteImport.update({
   path: '/candidate/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EmployerRoleNewRoute = EmployerRoleNewRouteImport.update({
+  id: '/employer/role/new',
+  path: '/employer/role/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EmployerRoleRoleIdPoolRoute = EmployerRoleRoleIdPoolRouteImport.update({
+  id: '/employer/role/$roleId/pool',
+  path: '/employer/role/$roleId/pool',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EmployerRoleRoleIdCapabilityMapRoute =
+  EmployerRoleRoleIdCapabilityMapRouteImport.update({
+    id: '/employer/role/$roleId/capability-map',
+    path: '/employer/role/$roleId/capability-map',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const EmployerRoleRoleIdPoolMatchIdRoute =
+  EmployerRoleRoleIdPoolMatchIdRouteImport.update({
+    id: '/$matchId',
+    path: '/$matchId',
+    getParentRoute: () => EmployerRoleRoleIdPoolRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -47,6 +73,10 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/candidate/dashboard': typeof CandidateDashboardRoute
   '/employer/dashboard': typeof EmployerDashboardRoute
+  '/employer/role/new': typeof EmployerRoleNewRoute
+  '/employer/role/$roleId/capability-map': typeof EmployerRoleRoleIdCapabilityMapRoute
+  '/employer/role/$roleId/pool': typeof EmployerRoleRoleIdPoolRouteWithChildren
+  '/employer/role/$roleId/pool/$matchId': typeof EmployerRoleRoleIdPoolMatchIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -54,6 +84,10 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/candidate/dashboard': typeof CandidateDashboardRoute
   '/employer/dashboard': typeof EmployerDashboardRoute
+  '/employer/role/new': typeof EmployerRoleNewRoute
+  '/employer/role/$roleId/capability-map': typeof EmployerRoleRoleIdCapabilityMapRoute
+  '/employer/role/$roleId/pool': typeof EmployerRoleRoleIdPoolRouteWithChildren
+  '/employer/role/$roleId/pool/$matchId': typeof EmployerRoleRoleIdPoolMatchIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -62,6 +96,10 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/candidate/dashboard': typeof CandidateDashboardRoute
   '/employer/dashboard': typeof EmployerDashboardRoute
+  '/employer/role/new': typeof EmployerRoleNewRoute
+  '/employer/role/$roleId/capability-map': typeof EmployerRoleRoleIdCapabilityMapRoute
+  '/employer/role/$roleId/pool': typeof EmployerRoleRoleIdPoolRouteWithChildren
+  '/employer/role/$roleId/pool/$matchId': typeof EmployerRoleRoleIdPoolMatchIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -71,6 +109,10 @@ export interface FileRouteTypes {
     | '/signup'
     | '/candidate/dashboard'
     | '/employer/dashboard'
+    | '/employer/role/new'
+    | '/employer/role/$roleId/capability-map'
+    | '/employer/role/$roleId/pool'
+    | '/employer/role/$roleId/pool/$matchId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -78,6 +120,10 @@ export interface FileRouteTypes {
     | '/signup'
     | '/candidate/dashboard'
     | '/employer/dashboard'
+    | '/employer/role/new'
+    | '/employer/role/$roleId/capability-map'
+    | '/employer/role/$roleId/pool'
+    | '/employer/role/$roleId/pool/$matchId'
   id:
     | '__root__'
     | '/'
@@ -85,6 +131,10 @@ export interface FileRouteTypes {
     | '/signup'
     | '/candidate/dashboard'
     | '/employer/dashboard'
+    | '/employer/role/new'
+    | '/employer/role/$roleId/capability-map'
+    | '/employer/role/$roleId/pool'
+    | '/employer/role/$roleId/pool/$matchId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -93,6 +143,9 @@ export interface RootRouteChildren {
   SignupRoute: typeof SignupRoute
   CandidateDashboardRoute: typeof CandidateDashboardRoute
   EmployerDashboardRoute: typeof EmployerDashboardRoute
+  EmployerRoleNewRoute: typeof EmployerRoleNewRoute
+  EmployerRoleRoleIdCapabilityMapRoute: typeof EmployerRoleRoleIdCapabilityMapRoute
+  EmployerRoleRoleIdPoolRoute: typeof EmployerRoleRoleIdPoolRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -132,8 +185,50 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CandidateDashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/employer/role/new': {
+      id: '/employer/role/new'
+      path: '/employer/role/new'
+      fullPath: '/employer/role/new'
+      preLoaderRoute: typeof EmployerRoleNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/employer/role/$roleId/pool': {
+      id: '/employer/role/$roleId/pool'
+      path: '/employer/role/$roleId/pool'
+      fullPath: '/employer/role/$roleId/pool'
+      preLoaderRoute: typeof EmployerRoleRoleIdPoolRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/employer/role/$roleId/capability-map': {
+      id: '/employer/role/$roleId/capability-map'
+      path: '/employer/role/$roleId/capability-map'
+      fullPath: '/employer/role/$roleId/capability-map'
+      preLoaderRoute: typeof EmployerRoleRoleIdCapabilityMapRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/employer/role/$roleId/pool/$matchId': {
+      id: '/employer/role/$roleId/pool/$matchId'
+      path: '/$matchId'
+      fullPath: '/employer/role/$roleId/pool/$matchId'
+      preLoaderRoute: typeof EmployerRoleRoleIdPoolMatchIdRouteImport
+      parentRoute: typeof EmployerRoleRoleIdPoolRoute
+    }
   }
 }
+
+interface EmployerRoleRoleIdPoolRouteChildren {
+  EmployerRoleRoleIdPoolMatchIdRoute: typeof EmployerRoleRoleIdPoolMatchIdRoute
+}
+
+const EmployerRoleRoleIdPoolRouteChildren: EmployerRoleRoleIdPoolRouteChildren =
+  {
+    EmployerRoleRoleIdPoolMatchIdRoute: EmployerRoleRoleIdPoolMatchIdRoute,
+  }
+
+const EmployerRoleRoleIdPoolRouteWithChildren =
+  EmployerRoleRoleIdPoolRoute._addFileChildren(
+    EmployerRoleRoleIdPoolRouteChildren,
+  )
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -141,6 +236,9 @@ const rootRouteChildren: RootRouteChildren = {
   SignupRoute: SignupRoute,
   CandidateDashboardRoute: CandidateDashboardRoute,
   EmployerDashboardRoute: EmployerDashboardRoute,
+  EmployerRoleNewRoute: EmployerRoleNewRoute,
+  EmployerRoleRoleIdCapabilityMapRoute: EmployerRoleRoleIdCapabilityMapRoute,
+  EmployerRoleRoleIdPoolRoute: EmployerRoleRoleIdPoolRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -2,10 +2,13 @@ import { serve } from '@hono/node-server'
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { logger } from 'hono/logger'
+import { roleRouter } from './routes/role.js'
+import { matchRouter } from './routes/match.js'
 
 const app = new Hono()
 
 app.use('*', logger())
+
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',')
   : ['http://localhost:5173']
@@ -13,6 +16,9 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
 app.use('*', cors({ origin: allowedOrigins }))
 
 app.get('/health', (c) => c.json({ ok: true, ts: Date.now() }))
+
+app.route('/role', roleRouter)
+app.route('/match', matchRouter)
 
 const port = parseInt(process.env.PORT ?? '3000')
 
