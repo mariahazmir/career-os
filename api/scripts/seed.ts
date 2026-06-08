@@ -8,8 +8,14 @@
  */
 
 import { createClient } from '@supabase/supabase-js'
-import { extractCandidateCapability } from '../src/ai/capability.js'
-import type { CandidateProfileInput, CandidateCapabilityAssessment } from '../src/validators/index.js'
+import { extractCandidateCapability, extractRoleCapability } from '../src/ai/capability.js'
+import { scoreAndExplainMatch } from '../src/ai/matching.js'
+import type {
+  CandidateProfileInput,
+  CandidateCapabilityAssessment,
+  RoleCapabilityDimension,
+  CandidateCapabilityDimension,
+} from '../src/validators/index.js'
 
 async function withRetry<T>(fn: () => Promise<T>, attempts = 3, delayMs = 5000): Promise<T> {
   for (let i = 0; i < attempts; i++) {
@@ -39,8 +45,37 @@ const EMPLOYER = {
 const HIRING_MANAGER = {
   name: 'Faridah Noor',
   email: 'faridah@kineticanalytics.my',
+  password: 'Demo2026!',
   role: 'admin' as const,
 }
+
+// ── Roles ──────────────────────────────────────────────────────────────────
+
+const ROLES = [
+  {
+    title: 'Data Analyst',
+    description_raw: `We're building out our analytics function at Kinetic Analytics. The right person will own our data pipeline from raw event logs to executive dashboards. They'll work directly with the product and operations teams to answer questions like: why did activation rates drop 12% last quarter, and which customer segments are underperforming.
+
+Day-to-day: write complex SQL queries against our BigQuery data warehouse, build and maintain Looker dashboards, automate reporting that currently takes our ops team 2 days a week, and eventually help us move to dbt for data modelling. We value clear thinking over fancy credentials. If you can look at a messy dataset and find the story in it, we want to talk.`,
+    context_notes: `We're a Series A analytics company in KL, team of 45. The person reports to our Head of Product. We're flexible on background — our best team members came from non-traditional paths. What we care about: can you SQL, can you communicate findings to non-technical stakeholders, and are you curious enough to dig into a problem without being told what to look for.`,
+    seniority_level: 'mid' as const,
+    location_type: 'hybrid' as const,
+  },
+  {
+    title: 'Data Engineer',
+    description_raw: `We need someone to own our data infrastructure as we scale from 50k to 500k monthly active users. The role involves designing and maintaining ETL pipelines, working with our cloud data warehouse (BigQuery), and ensuring data quality doesn't degrade as the product grows. You'll work with Python, Apache Airflow, and dbt. Experience with streaming data (Pub/Sub or Kafka) is a bonus but not required.`,
+    context_notes: `Our current pipeline is held together with duct tape. We need someone who can redesign it properly — real ownership, no bureaucracy.`,
+    seniority_level: 'mid' as const,
+    location_type: 'hybrid' as const,
+  },
+  {
+    title: 'BI Developer',
+    description_raw: `We're looking for someone to bridge our data team and business stakeholders. You'll own our Looker environment — building dashboards that the C-suite actually uses, not just opens and ignores. Strong SQL is mandatory. Experience with Looker LookML or an equivalent BI tool is preferred. We can train the right person on Looker specifics if your SQL and business communication are strong.`,
+    context_notes: `The previous BI developer left behind 200 dashboards that nobody uses. We need someone who asks "what decision does this help you make?" before building anything.`,
+    seniority_level: 'mid' as const,
+    location_type: 'hybrid' as const,
+  },
+]
 
 // ── Candidates ─────────────────────────────────────────────────────────────
 
@@ -460,7 +495,20 @@ async function seed() {
     console.log(`  ✓ employer.id = ${employer.id}`)
   }
 
-  // 2. Find or create employer_user
+  // 2. Create employer auth user (needed for demo login)
+  console.log(`▶ Creating auth user for ${HIRING_MANAGER.email}…`)
+  const { data: authData, error: authError } = await db.auth.admin.createUser({
+    email: HIRING_MANAGER.email,
+    password: HIRING_MANAGER.password,
+    email_confirm: true,
+    user_metadata: { name: HIRING_MANAGER.name, role: 'employer' },
+  })
+  if (authError && !authError.message.includes('already registered')) {
+    throw new Error(`Auth user creation failed: ${authError.message}`)
+  }
+  console.log(`  ✓ auth user ready${authData?.user ? ` (${authData.user.id})` : ' (already existed)'}`)
+
+  // 3. Find or create employer_user
   let empUser
   const { data: existingEmpUser } = await db
     .from('employer_user')
@@ -470,19 +518,77 @@ async function seed() {
 
   if (existingEmpUser) {
     empUser = existingEmpUser
-    console.log(`  ✓ employer_user already exists, id = ${empUser.id}\n`)
+    console.log(`  ✓ employer_user already exists, id = ${empUser.id}`)
   } else {
     const { data: newEmpUser, error: euError } = await db
       .from('employer_user')
-      .insert({ ...HIRING_MANAGER, employer_id: employer.id })
+      .insert({ name: HIRING_MANAGER.name, email: HIRING_MANAGER.email, role: HIRING_MANAGER.role, employer_id: employer.id })
       .select()
       .single()
     if (euError) throw new Error(`employer_user insert failed: ${euError.message}`)
     empUser = newEmpUser
-    console.log(`  ✓ employer_user.id = ${empUser.id}\n`)
+    console.log(`  ✓ employer_user.id = ${empUser.id}`)
   }
 
-  // 3. Seed candidates
+  // 4. Create roles + AI capability maps
+  console.log('\n▶ Creating roles and extracting capability maps…')
+  const seededRoles: Array<{
+    id: string
+    mapId: string
+    title: string
+    dimensions: RoleCapabilityDimension[]
+    contextNotes: string
+  }> = []
+
+  for (const roleDef of ROLES) {
+    // Skip if role already exists for this employer
+    const { data: existingRole } = await db
+      .from('role')
+      .select('id, role_capability_map(id, dimensions)')
+      .eq('employer_id', employer.id)
+      .eq('title', roleDef.title)
+      .single()
+
+    if (existingRole) {
+      const map = (existingRole.role_capability_map as Array<{ id: string; dimensions: RoleCapabilityDimension[] }>)?.[0]
+      if (map) {
+        console.log(`  ✓ ${roleDef.title} already exists (skipping)`)
+        seededRoles.push({ id: existingRole.id, mapId: map.id, title: roleDef.title, dimensions: map.dimensions, contextNotes: roleDef.context_notes })
+        continue
+      }
+    }
+
+    process.stdout.write(`  ▶ ${roleDef.title} — creating… `)
+    const { data: role, error: roleError } = await db
+      .from('role')
+      .insert({
+        employer_id: employer.id,
+        title: roleDef.title,
+        description_raw: roleDef.description_raw,
+        context_notes: roleDef.context_notes,
+        seniority_level: roleDef.seniority_level as never,
+        location_type: roleDef.location_type as never,
+        status: 'active' as never,
+      })
+      .select()
+      .single()
+    if (roleError || !role) throw new Error(`Role creation failed: ${roleError?.message}`)
+
+    process.stdout.write(`extracting capability map… `)
+    const dimensions = await withRetry(() => extractRoleCapability(roleDef.description_raw, roleDef.context_notes))
+
+    const { data: map, error: mapError } = await db
+      .from('role_capability_map')
+      .insert({ role_id: role.id, model_version: 'gemini-2.5-pro', dimensions: dimensions as never, employer_edited: false })
+      .select()
+      .single()
+    if (mapError || !map) throw new Error(`Capability map creation failed: ${mapError?.message}`)
+
+    seededRoles.push({ id: role.id, mapId: map.id, title: roleDef.title, dimensions, contextNotes: roleDef.context_notes })
+    console.log(`✓ (${dimensions.length} dimensions)`)
+  }
+
+  // 5. Seed candidates
   for (const c of CANDIDATES) {
     process.stdout.write(`▶ ${c.name} (${c.profile.current_job_title})… `)
 
@@ -555,9 +661,116 @@ async function seed() {
     console.log(`✓ (underemployed: ${c.profile.underemployment_flag}, signal: ${assessment.underemployment_signal})`)
   }
 
+  // 6. Run match pipeline for Data Analyst role
+  const dataAnalystRole = seededRoles.find((r) => r.title === 'Data Analyst')
+  if (dataAnalystRole) {
+    console.log('\n▶ Running match pipeline for Data Analyst role…')
+
+    // Fetch all candidates + their latest assessments
+    const { data: profiles } = await db
+      .from('candidate_profile')
+      .select('candidate_id, degree, field_of_study, current_job_title, underemployment_flag, candidate(id, name)')
+      .in('visibility_status', ['open', 'passive'])
+
+    const results: Array<{ name: string; score: number; bypass: boolean }> = []
+
+    for (const profile of profiles ?? []) {
+      const candidate = Array.isArray(profile.candidate) ? profile.candidate[0] : profile.candidate as { id: string; name: string } | null
+      if (!candidate) continue
+
+      // Skip if match already exists
+      const { data: existingMatch } = await db
+        .from('match')
+        .select('id')
+        .eq('candidate_id', candidate.id)
+        .eq('role_id', dataAnalystRole.id)
+        .limit(1)
+        .single()
+      if (existingMatch) { console.log(`  ✓ ${candidate.name} — already matched`); continue }
+
+      // Fetch latest assessment
+      const { data: assessment } = await db
+        .from('capability_assessment')
+        .select('id, dimensions')
+        .eq('candidate_id', candidate.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single()
+      if (!assessment) { console.log(`  ✗ ${candidate.name} — no assessment, skipping`); continue }
+
+      process.stdout.write(`  ▶ Scoring ${candidate.name}… `)
+      let matchScore
+      try {
+        matchScore = await withRetry(() => scoreAndExplainMatch({
+          candidateDimensions: assessment.dimensions as CandidateCapabilityDimension[],
+          roleDimensions: dataAnalystRole.dimensions,
+          contextNotes: dataAnalystRole.contextNotes,
+          candidateSummary: {
+            name: candidate.name,
+            current_job_title: profile.current_job_title,
+            degree: profile.degree,
+            field_of_study: profile.field_of_study,
+            underemployment_flag: profile.underemployment_flag,
+          },
+        }))
+      } catch (e) {
+        console.log(`FAILED: ${e}`)
+        continue
+      }
+
+      const { data: match, error: matchError } = await db
+        .from('match')
+        .insert({
+          candidate_id: candidate.id,
+          role_id: dataAnalystRole.id,
+          assessment_id: assessment.id,
+          map_id: dataAnalystRole.mapId,
+          overall_score: matchScore.overall_score,
+          tier_1_score: matchScore.tier_scores.tier_1,
+          tier_2_score: matchScore.tier_scores.tier_2,
+          tier_3_score: matchScore.tier_scores.tier_3,
+          tier_4_score: matchScore.tier_scores.tier_4,
+          underemployment_surfaced: matchScore.underemployment_surfaced,
+          status: 'pending' as never,
+          model_version: 'gemini-2.5-pro',
+        })
+        .select()
+        .single()
+
+      if (matchError || !match) { console.log(`match insert FAILED: ${matchError?.message}`); continue }
+
+      await db.from('match_explanation').insert({
+        match_id: match.id,
+        strong_dimensions: matchScore.strong_dimensions as never,
+        partial_dimensions: matchScore.partial_dimensions as never,
+        gap_dimensions: matchScore.gap_dimensions as never,
+        ats_bypass_reasoning: matchScore.ats_bypass_reasoning ?? null,
+        candidate_facing_text: matchScore.candidate_facing_text,
+        employer_facing_text: matchScore.employer_facing_text,
+        bridge_suggestion: matchScore.bridge_suggestion ?? null,
+        model_version: 'gemini-2.5-pro',
+      })
+
+      results.push({ name: candidate.name, score: matchScore.overall_score, bypass: matchScore.underemployment_surfaced })
+      const tag = matchScore.underemployment_surfaced ? ' ← ATS BYPASS' : ''
+      console.log(`✓ ${Math.round(matchScore.overall_score * 100)}%${tag}`)
+    }
+
+    if (results.length > 0) {
+      console.log('\n  Pool (sorted by score):')
+      results
+        .sort((a, b) => b.score - a.score)
+        .forEach(({ name, score, bypass }) => {
+          const pct = Math.round(score * 100).toString().padStart(3)
+          console.log(`    ${pct}%  ${name}${bypass ? '  ← ATS BYPASS' : ''}`)
+        })
+    }
+  }
+
   console.log('\n═══════════════════════════════════════')
   console.log(`Seed complete. ${CANDIDATES.length} candidates processed.`)
-  console.log('Next: create the Data Analyst role via the employer UI.')
+  console.log(`Employer login: ${HIRING_MANAGER.email} / ${HIRING_MANAGER.password}`)
+  console.log('Navigate to /employer/dashboard → Data Analyst role → pool.')
   console.log('═══════════════════════════════════════')
 }
 
