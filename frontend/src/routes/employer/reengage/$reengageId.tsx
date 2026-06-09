@@ -121,11 +121,12 @@ function EmployerReengagePage() {
 
   if (!record) return null
 
+  type RoleShape = { title: string; context_notes: string | null; employer: { company_name: string; industry: string | null } }
   const role = Array.isArray(record.original_match?.role)
-    ? (record.original_match!.role as unknown as Array<{ title: string }>)[0]
+    ? (record.original_match!.role as unknown as RoleShape[])[0]
     : record.original_match?.role
   const employer = Array.isArray(role?.employer)
-    ? (role!.employer as unknown as Array<{ company_name: string }>)[0]
+    ? (role!.employer as unknown as Array<{ company_name: string; industry: string | null }>)[0]
     : role?.employer
 
   const daysSince = useMemo(
