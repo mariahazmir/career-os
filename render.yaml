@@ -5,6 +5,7 @@ services:
     rootDir: api
     buildCommand: npm install && npm run build
     startCommand: npm start
+    nodeVersion: 20
     envVars:
       - key: GEMINI_API_KEY
         sync: false
@@ -15,4 +16,22 @@ services:
       - key: NODE_ENV
         value: production
       - key: ALLOWED_ORIGINS
+        sync: false
+
+  - type: web
+    name: career-os-frontend
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_SUPABASE_URL
+        sync: false
+      - key: VITE_SUPABASE_ANON_KEY
+        sync: false
+      - key: VITE_API_URL
         sync: false
