@@ -27,7 +27,7 @@ SCORING RULES:
 7. employer_facing_text: 2-4 sentences. Why is this person worth considering despite the non-traditional path?
 8. candidate_facing_text: 2-3 sentences. What makes them a strong fit? What are the real gaps?
 9. bridge_suggestion: 1-2 sentences. Specific steps to close the largest gap - name a tool, project type, or certification.
-10. Each dimension object in the arrays must include: name, tier, candidate_score, required_score, confidence, explanation.
+10. Each dimension object in the arrays must include: name, tier, candidate_score, required_score, confidence, explanation. The confidence field MUST be exactly one of: "verified", "inferred", or "self_reported". For gap dimensions where the candidate lacks evidence, use "inferred".
 11. Be strict when the candidate lacks technical evidence. An unrelated profile with no SQL/Python/dashboard/project evidence should score below 0.35 and have more gap dimensions than strong dimensions.
 12. If underemployment_surfaced is false, omit ats_bypass_reasoning.
 

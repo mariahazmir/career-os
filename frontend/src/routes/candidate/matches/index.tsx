@@ -1,6 +1,7 @@
 import { createFileRoute, redirect, Link } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { api } from '../../../lib/api'
+import { useAuth } from '../../../contexts/auth'
 
 interface ReengageNotification {
   id: string
@@ -39,6 +40,9 @@ const ANON_ICON = (
 )
 
 function MatchesPage() {
+  const { session } = useAuth()
+  const email = session?.user.email ?? ''
+  const initials = email.slice(0, 2).toUpperCase()
   const [matches, setMatches] = useState<MatchNotification[]>([])
   const [reengages, setReengages] = useState<ReengageNotification[]>([])
   const [loading, setLoading] = useState(true)
@@ -73,7 +77,7 @@ function MatchesPage() {
             <Link to="/candidate/profile/capability" className="cos-nav-link">Profile</Link>
             <Link to="/candidate/dashboard" className="cos-nav-link">Dashboard</Link>
           </nav>
-          <div className="cos-av-xs ml-2">AR</div>
+          <div className="cos-av-xs ml-2">{initials}</div>
         </header>
 
         <main className="max-w-[720px] mx-auto px-8 pb-24 pt-10">
@@ -82,7 +86,7 @@ function MatchesPage() {
             <span className="cos-pulse-dot"><i /></span>
             <span className="text-[13.5px] text-[var(--tx-dim)]">Currently: <strong className="text-[var(--tx)]">Open to opportunities</strong></span>
             <span className="flex-1" />
-            <a href="/candidate/profile/setup" className="text-[12.5px] text-[var(--tx-mute)] no-underline px-3.5 py-1.5 rounded-full border border-[var(--line)] hover:bg-[var(--surface-2)] transition-colors">Change</a>
+            <Link to="/candidate/profile/setup" className="text-[12.5px] text-[var(--tx-mute)] no-underline px-3.5 py-1.5 rounded-full border border-[var(--line)] hover:bg-[var(--surface-2)] transition-colors">Change</Link>
           </div>
 
           {/* Page header */}
@@ -179,8 +183,7 @@ function MatchesPage() {
                     {preview && (
                       <div className="cos-why-box mb-4">
                         <span className="cos-why-q">Why you were matched</span>
-                        <span dangerouslySetInnerHTML={{ __html: preview }} />
-                        {(explanation?.candidate_facing_text?.length ?? 0) > 130 ? '…' : ''}
+                        <span>{preview}{(explanation?.candidate_facing_text?.length ?? 0) > 130 ? '…' : ''}</span>
                       </div>
                     )}
 

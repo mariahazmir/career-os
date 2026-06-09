@@ -4,7 +4,7 @@ import { z } from 'zod'
 
 const TierSchema = z.number().int().min(1).max(4)
 const ScoreSchema = z.number().min(0).max(1)
-const ConfidenceSchema = z.enum(['verified', 'inferred', 'self_reported'])
+const ConfidenceSchema = z.enum(['verified', 'inferred', 'self_reported']).catch('inferred')
 
 // Role capability
 

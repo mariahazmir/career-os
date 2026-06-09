@@ -1,4 +1,4 @@
-import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, redirect, useNavigate, Link } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
 import { api } from '../../../lib/api'
 
@@ -193,6 +193,11 @@ function ProfileSetupPage() {
             <div className="cos-brand-mark"><div className="cos-brand-tri" /></div>
             Career<span className="cos-brand-sub">OS</span>
           </div>
+          <div className="flex-1" />
+          <Link to="/candidate/dashboard" className="cos-back">
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
+            Dashboard
+          </Link>
         </header>
 
         <main className="max-w-[720px] mx-auto px-6 pb-24 pt-4">
@@ -208,7 +213,7 @@ function ProfileSetupPage() {
 
             {/* Education */}
             <section className="cos-card p-6 flex flex-col gap-4">
-              <h2 className="text-[13px] font-semibold text-[var(--tx)] uppercase tracking-widest">Education</h2>
+              <h2 className="cos-eyebrow-teal">Education</h2>
               <div className="grid grid-cols-2 gap-3.5">
                 <div>
                   <label htmlFor="setup-degree" className="cos-label">Degree</label>
@@ -235,7 +240,7 @@ function ProfileSetupPage() {
 
             {/* Current situation */}
             <section className="cos-card p-6 flex flex-col gap-4">
-              <h2 className="text-[13px] font-semibold text-[var(--tx)] uppercase tracking-widest">Current situation</h2>
+              <h2 className="cos-eyebrow-teal">Current situation</h2>
               <div className="grid grid-cols-2 gap-3.5">
                 <div>
                   <label htmlFor="setup-jobtitle" className="cos-label">Current job title</label>
@@ -288,7 +293,7 @@ function ProfileSetupPage() {
 
             {/* Career intent */}
             <section className="cos-card p-6">
-              <h2 className="text-[13px] font-semibold text-[var(--tx)] uppercase tracking-widest mb-1">Where you're heading</h2>
+              <h2 className="cos-eyebrow-teal mb-1">Where you're heading</h2>
               <p className="text-[12.5px] text-[var(--tx-mute)] mb-4 leading-relaxed">
                 What kind of work do you want to be doing? Be specific — this shapes how we assess your trajectory.
               </p>
@@ -306,8 +311,8 @@ function ProfileSetupPage() {
 
             {/* Skills */}
             <section className="cos-card p-6 flex flex-col gap-4">
-              <h2 className="text-[13px] font-semibold text-[var(--tx)] uppercase tracking-widest">Skills</h2>
-              <div className="flex gap-2.5">
+              <h2 className="cos-eyebrow-teal">Skills</h2>
+              <div className="flex gap-2.5 items-center">
                 <input
                   value={skillInput}
                   onChange={(e) => setSkillInput(e.target.value)}
@@ -324,9 +329,9 @@ function ProfileSetupPage() {
                   onChange={(e) => setSkillYears(e.target.value)}
                   aria-label="Years of experience with this skill"
                   placeholder="yrs"
-                  className="cos-input w-20 text-center"
+                  className="cos-input-sm"
                 />
-                <button type="button" onClick={addSkill} className="cos-btn-teal">Add</button>
+                <button type="button" onClick={addSkill} className="cos-btn-teal-sm">Add</button>
               </div>
               {skills.length > 0 && (
                 <div className="flex flex-wrap gap-2">
@@ -340,7 +345,7 @@ function ProfileSetupPage() {
             {/* Projects */}
             <section className="cos-card p-6 flex flex-col gap-4">
               <div>
-                <h2 className="text-[13px] font-semibold text-[var(--tx)] uppercase tracking-widest">Projects & self-directed work</h2>
+                <h2 className="cos-eyebrow-teal">Projects & self-directed work</h2>
                 <p className="text-[12.5px] text-[var(--tx-mute)] mt-1">Side projects, freelance work, self-study outputs, open source contributions.</p>
               </div>
               <div className="flex flex-col gap-2.5">
@@ -360,7 +365,7 @@ function ProfileSetupPage() {
                     placeholder="What did you build and what did you learn?"
                   />
                 </div>
-                <div className="flex gap-2.5">
+                <div className="flex gap-2.5 items-center">
                   <input
                     value={projUrl}
                     onChange={(e) => setProjUrl(e.target.value)}
@@ -368,7 +373,7 @@ function ProfileSetupPage() {
                     aria-label="Project URL"
                     className="cos-input flex-1"
                   />
-                  <button type="button" onClick={addProject} className="cos-btn-teal">Add</button>
+                  <button type="button" onClick={addProject} className="cos-btn-teal-sm">Add</button>
                 </div>
               </div>
               {projects.length > 0 && (
@@ -396,7 +401,7 @@ function ProfileSetupPage() {
             {/* Certifications */}
             <section className="cos-card p-6 flex flex-col gap-4">
               <div>
-                <h2 className="text-[13px] font-semibold text-[var(--tx)] uppercase tracking-widest">Certifications</h2>
+                <h2 className="cos-eyebrow-teal">Certifications</h2>
                 <p className="text-[12.5px] text-[var(--tx-mute)] mt-1">Formal certifications, online course completions, professional qualifications.</p>
               </div>
               <div className="flex flex-col gap-2.5">
@@ -421,7 +426,7 @@ function ProfileSetupPage() {
                     onChange={(e) => setCertYear(e.target.value)}
                     placeholder="Year"
                     aria-label="Certification year"
-                    className="cos-input w-24 text-center"
+                    className="cos-input-sm"
                   />
                   <button
                     type="button"
@@ -430,7 +435,7 @@ function ProfileSetupPage() {
                       setCertifications((prev) => [...prev, { name: certName.trim(), issuer: certIssuer.trim(), year: certYear }])
                       setCertName(''); setCertIssuer(''); setCertYear('')
                     }}
-                    className="cos-btn-teal"
+                    className="cos-btn-teal-sm"
                   >
                     Add
                   </button>
