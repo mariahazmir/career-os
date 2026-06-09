@@ -31,14 +31,25 @@ interface Skill { name: string; years: number }
 interface Project { title: string; description: string; url: string }
 interface Certification { name: string; issuer: string; year: string }
 
-function Tag({ label, onRemove }: { label: string; onRemove: () => void }) {
+function Chip({ label, onRemove }: { label: string; onRemove: () => void }) {
   return (
-    <span className="inline-flex items-center gap-1 bg-indigo-50 text-indigo-700 text-xs px-2 py-1 rounded-full">
+    <span className="inline-flex items-center gap-1.5 cos-chip">
       {label}
-      <button type="button" onClick={onRemove} className="hover:text-indigo-900 ml-0.5">×</button>
+      <button
+        type="button"
+        onClick={onRemove}
+        aria-label={`Remove ${label}`}
+        className="text-[var(--teal)] hover:text-[var(--tx)] bg-transparent border-none cursor-pointer p-0 text-[14px] leading-none"
+      >×</button>
     </span>
   )
 }
+
+const VISIBILITY_OPTIONS = [
+  { value: 'open', label: 'Open — actively looking' },
+  { value: 'passive', label: 'Passively open — right role only' },
+  { value: 'closed', label: 'Not looking right now' },
+]
 
 function ProfileSetupPage() {
   const navigate = useNavigate()
@@ -79,7 +90,6 @@ function ProfileSetupPage() {
   const [certIssuer, setCertIssuer] = useState('')
   const [certYear, setCertYear] = useState('')
 
-  // Prefill from existing profile on mount
   useEffect(() => {
     api.get<ExistingProfile>('/candidate/profile')
       .then(({ profile: p }) => {
@@ -96,17 +106,13 @@ function ProfileSetupPage() {
         setCareerIntent(p.career_intent ?? '')
         setSkills((p.skills ?? []).map((s) => ({ name: s.name, years: s.years ?? 1 })))
         setProjects((p.projects ?? []).map((pr) => ({
-          title: pr.title,
-          description: pr.description ?? '',
-          url: pr.url ?? '',
+          title: pr.title, description: pr.description ?? '', url: pr.url ?? '',
         })))
         setCertifications((p.certifications ?? []).map((c) => ({
-          name: c.name,
-          issuer: c.issuer ?? '',
-          year: c.year?.toString() ?? '',
+          name: c.name, issuer: c.issuer ?? '', year: c.year?.toString() ?? '',
         })))
       })
-      .catch(() => { /* no profile yet, form stays empty */ })
+      .catch(() => { /* no profile yet */ })
       .finally(() => setFetching(false))
   }, [])
 
@@ -141,14 +147,11 @@ function ProfileSetupPage() {
         career_intent: careerIntent || undefined,
         skills: skills.map((s) => ({ name: s.name, category: 'technical', years: s.years })),
         projects: projects.map((p) => ({
-          title: p.title,
-          description: p.description || undefined,
-          url: p.url || undefined,
-          skills_used: [],
+          title: p.title, description: p.description || undefined,
+          url: p.url || undefined, skills_used: [],
         })),
         certifications: certifications.map((c) => ({
-          name: c.name,
-          issuer: c.issuer || undefined,
+          name: c.name, issuer: c.issuer || undefined,
           year: c.year ? parseInt(c.year) : undefined,
         })),
       })
@@ -160,210 +163,312 @@ function ProfileSetupPage() {
   }
 
   if (fetching) return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+    <div className="cos-page flex items-center justify-center">
+      <div className="cos-aurora-candidate" />
+      <div className="cos-layer flex flex-col items-center gap-4">
+        <div className="cos-spinner cos-spinner-teal w-10 h-10 border-[3px]" />
+      </div>
     </div>
   )
 
   if (loading) return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center gap-4">
-      <div className="w-8 h-8 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
-      <p className="text-gray-700 font-medium">Building your capability profile…</p>
-      <p className="text-sm text-gray-400">Analysing your background and intent</p>
+    <div className="cos-page flex flex-col items-center justify-center gap-6">
+      <div className="cos-aurora-candidate" />
+      <div className="cos-layer flex flex-col items-center gap-5 text-center">
+        <div className="cos-spinner cos-spinner-teal w-14 h-14 border-4" />
+        <div>
+          <p className="text-[22px] font-semibold text-[var(--tx)] tracking-tight">Building your capability profile…</p>
+          <p className="text-[14px] text-[var(--tx-dim)] mt-2">Analysing your background and intent</p>
+        </div>
+      </div>
     </div>
   )
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 px-6 py-4">
-        <span className="font-semibold text-gray-900">Career OS</span>
-      </header>
+    <div className="cos-page">
+      <div className="cos-aurora-candidate" />
+      <div className="cos-layer">
+        <header className="cos-appbar cos-appbar-narrow">
+          <div className="cos-brand">
+            <div className="cos-brand-mark"><div className="cos-brand-tri" /></div>
+            Career<span className="cos-brand-sub">OS</span>
+          </div>
+        </header>
 
-      <main className="max-w-2xl mx-auto px-6 py-10">
-        <h1 className="text-2xl font-semibold text-gray-900 mb-1">Build your profile</h1>
-        <p className="text-sm text-gray-500 mb-8">
-          Be honest and specific. The more context you give, the more accurately we can represent your true capability.
-        </p>
+        <main className="max-w-[720px] mx-auto px-6 pb-24 pt-4">
+          <div className="mb-8">
+            <div className="cos-eyebrow-teal mb-3">Your profile</div>
+            <h1 className="cos-h1 m-0">Build your profile</h1>
+            <p className="text-[14.5px] text-[var(--tx-dim)] mt-3 leading-relaxed max-w-[52ch]">
+              Be honest and specific. The more context you give, the more accurately we can represent your true capability.
+            </p>
+          </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Education */}
-          <section className="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
-            <h2 className="text-sm font-semibold text-gray-900">Education</h2>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Degree</label>
-                <input value={degree} onChange={(e) => setDegree(e.target.value)} placeholder="e.g. Bachelor of Computer Science"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Field of study</label>
-                <input value={field} onChange={(e) => setField(e.target.value)} placeholder="e.g. Computer Science"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Institution</label>
-                <input value={institution} onChange={(e) => setInstitution(e.target.value)} placeholder="e.g. Universiti Malaya"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Graduation year</label>
-                <input type="number" value={gradYear} onChange={(e) => setGradYear(e.target.value)} placeholder="e.g. 2022"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-              </div>
-            </div>
-          </section>
+          <form onSubmit={handleSubmit} className="flex flex-col gap-5">
 
-          {/* Current situation */}
-          <section className="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
-            <h2 className="text-sm font-semibold text-gray-900">Current situation</h2>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Current job title</label>
-                <input value={jobTitle} onChange={(e) => setJobTitle(e.target.value)} placeholder="e.g. Sales Executive"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            {/* Education */}
+            <section className="cos-card p-6 flex flex-col gap-4">
+              <h2 className="text-[13px] font-semibold text-[var(--tx)] uppercase tracking-widest">Education</h2>
+              <div className="grid grid-cols-2 gap-3.5">
+                <div>
+                  <label htmlFor="setup-degree" className="cos-label">Degree</label>
+                  <input id="setup-degree" value={degree} onChange={(e) => setDegree(e.target.value)}
+                    placeholder="e.g. Bachelor of Computer Science" className="cos-input mt-2" />
+                </div>
+                <div>
+                  <label htmlFor="setup-field" className="cos-label">Field of study</label>
+                  <input id="setup-field" value={field} onChange={(e) => setField(e.target.value)}
+                    placeholder="e.g. Computer Science" className="cos-input mt-2" />
+                </div>
+                <div>
+                  <label htmlFor="setup-institution" className="cos-label">Institution</label>
+                  <input id="setup-institution" value={institution} onChange={(e) => setInstitution(e.target.value)}
+                    placeholder="e.g. Universiti Malaya" className="cos-input mt-2" />
+                </div>
+                <div>
+                  <label htmlFor="setup-gradyear" className="cos-label">Graduation year</label>
+                  <input id="setup-gradyear" type="number" value={gradYear} onChange={(e) => setGradYear(e.target.value)}
+                    placeholder="e.g. 2022" className="cos-input mt-2" />
+                </div>
               </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Employer</label>
-                <input value={employer} onChange={(e) => setEmployer(e.target.value)} placeholder="e.g. Acme Sdn Bhd"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Years of experience</label>
-                <input type="number" min="0" value={yearsExp} onChange={(e) => setYearsExp(e.target.value)} placeholder="e.g. 2"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-              </div>
-              <div>
-                <label htmlFor="visibility" className="block text-xs font-medium text-gray-700 mb-1">Visibility</label>
-                <select id="visibility" value={visibility} onChange={(e) => setVisibility(e.target.value as typeof visibility)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                  <option value="open">Open — actively looking</option>
-                  <option value="passive">Passively open — right role only</option>
-                  <option value="closed">Not looking right now</option>
-                </select>
-              </div>
-            </div>
-            <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-lg p-4">
-              <input type="checkbox" id="underemployed" checked={underemployed} onChange={(e) => setUnderemployed(e.target.checked)}
-                className="mt-0.5 accent-indigo-600" />
-              <label htmlFor="underemployed" className="text-sm text-amber-900 leading-relaxed cursor-pointer">
-                I'm currently working in a role that doesn't reflect my qualification level.
-                <span className="block text-xs text-amber-600 mt-0.5">Many qualified people land in this situation. Flagging this helps us surface you to the right employers based on what you're actually capable of.</span>
-              </label>
-            </div>
-          </section>
+            </section>
 
-          {/* Career intent */}
-          <section className="bg-white border border-gray-200 rounded-xl p-6">
-            <h2 className="text-sm font-semibold text-gray-900 mb-1">Where you're heading</h2>
-            <p className="text-xs text-gray-400 mb-3">What kind of work do you want to be doing? Be specific — this shapes how we assess your trajectory.</p>
-            <textarea value={careerIntent} onChange={(e) => setCareerIntent(e.target.value)} rows={3}
-              placeholder="e.g. I want to move into data analytics. I've been building Python and SQL skills on the side and want to work in a role where I can own the analytics function at a tech company."
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none" />
-          </section>
-
-          {/* Skills */}
-          <section className="bg-white border border-gray-200 rounded-xl p-6 space-y-3">
-            <h2 className="text-sm font-semibold text-gray-900">Skills</h2>
-            <div className="flex gap-2">
-              <input value={skillInput} onChange={(e) => setSkillInput(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addSkill() } }}
-                placeholder="Skill name (e.g. Python)"
-                className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-              <input type="number" min="1" max="20" value={skillYears} onChange={(e) => setSkillYears(e.target.value)}
-                className="w-20 border border-gray-300 rounded-lg px-3 py-2 text-sm text-center focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="yrs" />
-              <button type="button" onClick={addSkill}
-                className="bg-indigo-600 text-white rounded-lg px-4 py-2 text-sm hover:bg-indigo-700">Add</button>
-            </div>
-            {skills.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {skills.map((s, i) => (
-                  <Tag key={i} label={`${s.name} · ${s.years}yr`} onRemove={() => setSkills((p) => p.filter((_, j) => j !== i))} />
-                ))}
-              </div>
-            )}
-          </section>
-
-          {/* Projects */}
-          <section className="bg-white border border-gray-200 rounded-xl p-6 space-y-3">
-            <h2 className="text-sm font-semibold text-gray-900">Projects & self-directed work</h2>
-            <p className="text-xs text-gray-400">Side projects, freelance work, self-study outputs, open source contributions.</p>
-            <div className="space-y-2">
-              <input value={projTitle} onChange={(e) => setProjTitle(e.target.value)} placeholder="Project title"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-              <textarea value={projDesc} onChange={(e) => setProjDesc(e.target.value)} rows={2} placeholder="What did you build and what did you learn?"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none" />
-              <div className="flex gap-2">
-                <input value={projUrl} onChange={(e) => setProjUrl(e.target.value)} placeholder="URL (optional)"
-                  className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-                <button type="button" onClick={addProject}
-                  className="bg-indigo-600 text-white rounded-lg px-4 py-2 text-sm hover:bg-indigo-700">Add</button>
-              </div>
-            </div>
-            {projects.length > 0 && (
-              <div className="space-y-2">
-                {projects.map((p, i) => (
-                  <div key={i} className="flex items-start justify-between bg-gray-50 rounded-lg p-3 gap-2">
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">{p.title}</p>
-                      {p.description && <p className="text-xs text-gray-400 mt-0.5">{p.description}</p>}
-                    </div>
-                    <button type="button" onClick={() => setProjects((prev) => prev.filter((_, j) => j !== i))}
-                      className="text-xs text-gray-400 hover:text-red-500 shrink-0">Remove</button>
+            {/* Current situation */}
+            <section className="cos-card p-6 flex flex-col gap-4">
+              <h2 className="text-[13px] font-semibold text-[var(--tx)] uppercase tracking-widest">Current situation</h2>
+              <div className="grid grid-cols-2 gap-3.5">
+                <div>
+                  <label htmlFor="setup-jobtitle" className="cos-label">Current job title</label>
+                  <input id="setup-jobtitle" value={jobTitle} onChange={(e) => setJobTitle(e.target.value)}
+                    placeholder="e.g. Sales Executive" className="cos-input mt-2" />
+                </div>
+                <div>
+                  <label htmlFor="setup-employer" className="cos-label">Employer</label>
+                  <input id="setup-employer" value={employer} onChange={(e) => setEmployer(e.target.value)}
+                    placeholder="e.g. Acme Sdn Bhd" className="cos-input mt-2" />
+                </div>
+                <div>
+                  <label htmlFor="setup-yrsexp" className="cos-label">Years of experience</label>
+                  <input id="setup-yrsexp" type="number" min="0" value={yearsExp} onChange={(e) => setYearsExp(e.target.value)}
+                    placeholder="e.g. 2" className="cos-input mt-2" />
+                </div>
+                <div>
+                  <label htmlFor="setup-visibility" className="cos-label">Visibility</label>
+                  <div className="relative mt-2">
+                    <select id="setup-visibility" value={visibility}
+                      onChange={(e) => setVisibility(e.target.value as typeof visibility)}
+                      className="cos-select">
+                      {VISIBILITY_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                    </select>
+                    <svg className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--tx-mute)] pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9l6 6 6-6"/></svg>
                   </div>
-                ))}
+                </div>
               </div>
-            )}
-          </section>
 
-          {/* Certifications */}
-          <section className="bg-white border border-gray-200 rounded-xl p-6 space-y-3">
-            <h2 className="text-sm font-semibold text-gray-900">Certifications</h2>
-            <p className="text-xs text-gray-400">Formal certifications, online course completions, professional qualifications.</p>
-            <div className="space-y-2">
-              <input value={certName} onChange={(e) => setCertName(e.target.value)} placeholder="Certification name (e.g. Google Data Analytics Certificate)"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-              <div className="flex gap-2">
-                <input value={certIssuer} onChange={(e) => setCertIssuer(e.target.value)} placeholder="Issuer (e.g. Google / Coursera)"
-                  className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-                <input type="number" value={certYear} onChange={(e) => setCertYear(e.target.value)} placeholder="Year"
-                  className="w-24 border border-gray-300 rounded-lg px-3 py-2 text-sm text-center focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (!certName.trim()) return
-                    setCertifications((prev) => [...prev, { name: certName.trim(), issuer: certIssuer.trim(), year: certYear }])
-                    setCertName(''); setCertIssuer(''); setCertYear('')
-                  }}
-                  className="bg-indigo-600 text-white rounded-lg px-4 py-2 text-sm hover:bg-indigo-700"
-                >Add</button>
+              <div className="cos-surfaced">
+                <div className="flex items-start gap-3">
+                  <input
+                    type="checkbox"
+                    id="setup-underemployed"
+                    checked={underemployed}
+                    onChange={(e) => setUnderemployed(e.target.checked)}
+                    className="mt-1 w-4 h-4 accent-[var(--teal)] flex-shrink-0"
+                  />
+                  <label htmlFor="setup-underemployed" className="cursor-pointer">
+                    <p className="text-[14px] font-medium text-[var(--tx)]">
+                      I'm currently working in a role that doesn't reflect my qualification level.
+                    </p>
+                    <p className="text-[12.5px] text-[var(--tx-mute)] mt-1 leading-relaxed">
+                      Many qualified people land in this situation. Flagging this helps us surface you based on what you're actually capable of.
+                    </p>
+                  </label>
+                </div>
               </div>
-            </div>
-            {certifications.length > 0 && (
-              <div className="space-y-2">
-                {certifications.map((c, i) => (
-                  <div key={i} className="flex items-start justify-between bg-gray-50 rounded-lg p-3 gap-2">
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">{c.name}</p>
-                      <p className="text-xs text-gray-400 mt-0.5">
-                        {[c.issuer, c.year].filter(Boolean).join(' · ')}
-                      </p>
+            </section>
+
+            {/* Career intent */}
+            <section className="cos-card p-6">
+              <h2 className="text-[13px] font-semibold text-[var(--tx)] uppercase tracking-widest mb-1">Where you're heading</h2>
+              <p className="text-[12.5px] text-[var(--tx-mute)] mb-4 leading-relaxed">
+                What kind of work do you want to be doing? Be specific — this shapes how we assess your trajectory.
+              </p>
+              <div className="cos-textarea-soft">
+                <textarea
+                  id="setup-career-intent"
+                  aria-label="Career intent"
+                  value={careerIntent}
+                  onChange={(e) => setCareerIntent(e.target.value)}
+                  rows={3}
+                  placeholder="e.g. I want to move into data analytics. I've been building Python and SQL skills on the side and want to work in a role where I can own the analytics function."
+                />
+              </div>
+            </section>
+
+            {/* Skills */}
+            <section className="cos-card p-6 flex flex-col gap-4">
+              <h2 className="text-[13px] font-semibold text-[var(--tx)] uppercase tracking-widest">Skills</h2>
+              <div className="flex gap-2.5">
+                <input
+                  value={skillInput}
+                  onChange={(e) => setSkillInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addSkill() } }}
+                  placeholder="Skill name (e.g. Python)"
+                  aria-label="Skill name"
+                  className="cos-input flex-1"
+                />
+                <input
+                  type="number"
+                  min="1"
+                  max="20"
+                  value={skillYears}
+                  onChange={(e) => setSkillYears(e.target.value)}
+                  aria-label="Years of experience with this skill"
+                  placeholder="yrs"
+                  className="cos-input w-20 text-center"
+                />
+                <button type="button" onClick={addSkill} className="cos-btn-teal">Add</button>
+              </div>
+              {skills.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {skills.map((s, i) => (
+                    <Chip key={i} label={`${s.name} · ${s.years}yr`} onRemove={() => setSkills((p) => p.filter((_, j) => j !== i))} />
+                  ))}
+                </div>
+              )}
+            </section>
+
+            {/* Projects */}
+            <section className="cos-card p-6 flex flex-col gap-4">
+              <div>
+                <h2 className="text-[13px] font-semibold text-[var(--tx)] uppercase tracking-widest">Projects & self-directed work</h2>
+                <p className="text-[12.5px] text-[var(--tx-mute)] mt-1">Side projects, freelance work, self-study outputs, open source contributions.</p>
+              </div>
+              <div className="flex flex-col gap-2.5">
+                <input
+                  value={projTitle}
+                  onChange={(e) => setProjTitle(e.target.value)}
+                  placeholder="Project title"
+                  aria-label="Project title"
+                  className="cos-input"
+                />
+                <div className="cos-textarea-soft">
+                  <textarea
+                    value={projDesc}
+                    onChange={(e) => setProjDesc(e.target.value)}
+                    rows={2}
+                    aria-label="Project description"
+                    placeholder="What did you build and what did you learn?"
+                  />
+                </div>
+                <div className="flex gap-2.5">
+                  <input
+                    value={projUrl}
+                    onChange={(e) => setProjUrl(e.target.value)}
+                    placeholder="URL (optional)"
+                    aria-label="Project URL"
+                    className="cos-input flex-1"
+                  />
+                  <button type="button" onClick={addProject} className="cos-btn-teal">Add</button>
+                </div>
+              </div>
+              {projects.length > 0 && (
+                <div className="flex flex-col gap-2">
+                  {projects.map((p, i) => (
+                    <div key={i} className="cos-card-md flex items-start justify-between gap-3 p-4">
+                      <div>
+                        <p className="text-[13.5px] font-semibold text-[var(--tx)]">{p.title}</p>
+                        {p.description && <p className="text-[12px] text-[var(--tx-mute)] mt-0.5">{p.description}</p>}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setProjects((prev) => prev.filter((_, j) => j !== i))}
+                        aria-label={`Remove project ${p.title}`}
+                        className="text-[12px] text-[var(--tx-mute)] hover:text-[var(--red)] bg-transparent border-none cursor-pointer flex-shrink-0"
+                      >
+                        Remove
+                      </button>
                     </div>
-                    <button type="button" onClick={() => setCertifications((prev) => prev.filter((_, j) => j !== i))}
-                      className="text-xs text-gray-400 hover:text-red-500 shrink-0">Remove</button>
-                  </div>
-                ))}
+                  ))}
+                </div>
+              )}
+            </section>
+
+            {/* Certifications */}
+            <section className="cos-card p-6 flex flex-col gap-4">
+              <div>
+                <h2 className="text-[13px] font-semibold text-[var(--tx)] uppercase tracking-widest">Certifications</h2>
+                <p className="text-[12.5px] text-[var(--tx-mute)] mt-1">Formal certifications, online course completions, professional qualifications.</p>
               </div>
-            )}
-          </section>
+              <div className="flex flex-col gap-2.5">
+                <input
+                  value={certName}
+                  onChange={(e) => setCertName(e.target.value)}
+                  placeholder="Certification name (e.g. Google Data Analytics Certificate)"
+                  aria-label="Certification name"
+                  className="cos-input"
+                />
+                <div className="flex gap-2.5">
+                  <input
+                    value={certIssuer}
+                    onChange={(e) => setCertIssuer(e.target.value)}
+                    placeholder="Issuer (e.g. Google / Coursera)"
+                    aria-label="Certification issuer"
+                    className="cos-input flex-1"
+                  />
+                  <input
+                    type="number"
+                    value={certYear}
+                    onChange={(e) => setCertYear(e.target.value)}
+                    placeholder="Year"
+                    aria-label="Certification year"
+                    className="cos-input w-24 text-center"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!certName.trim()) return
+                      setCertifications((prev) => [...prev, { name: certName.trim(), issuer: certIssuer.trim(), year: certYear }])
+                      setCertName(''); setCertIssuer(''); setCertYear('')
+                    }}
+                    className="cos-btn-teal"
+                  >
+                    Add
+                  </button>
+                </div>
+              </div>
+              {certifications.length > 0 && (
+                <div className="flex flex-col gap-2">
+                  {certifications.map((c, i) => (
+                    <div key={i} className="cos-card-md flex items-start justify-between gap-3 p-4">
+                      <div>
+                        <p className="text-[13.5px] font-semibold text-[var(--tx)]">{c.name}</p>
+                        <p className="text-[12px] text-[var(--tx-mute)] mt-0.5">
+                          {[c.issuer, c.year].filter(Boolean).join(' · ')}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setCertifications((prev) => prev.filter((_, j) => j !== i))}
+                        aria-label={`Remove certification ${c.name}`}
+                        className="text-[12px] text-[var(--tx-mute)] hover:text-[var(--red)] bg-transparent border-none cursor-pointer flex-shrink-0"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
 
-          {error && <p className="text-sm text-red-600">{error}</p>}
+            {error && <p className="text-[13px] text-[var(--red)]">{error}</p>}
 
-          <button type="submit"
-            className="w-full bg-indigo-600 text-white rounded-lg py-2.5 text-sm font-medium hover:bg-indigo-700 transition-colors">
-            Build my capability profile
-          </button>
-        </form>
-      </main>
+            <button type="submit" className="cos-btn-teal w-full text-[16px] py-4 justify-center">
+              Build my capability profile
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            </button>
+          </form>
+        </main>
+      </div>
     </div>
   )
 }

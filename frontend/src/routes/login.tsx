@@ -23,58 +23,66 @@ function LoginPage() {
     e.preventDefault()
     setError(null)
     setLoading(true)
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+    const { data, error: signInError } = await supabase.auth.signInWithPassword({ email, password })
     setLoading(false)
-    if (error) { setError(error.message); return }
+    if (signInError) { setError(signInError.message); return }
     const role = data.user?.user_metadata?.role as string | undefined
     await navigate({ to: role === 'employer' ? '/employer/dashboard' : '/candidate/dashboard' })
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="w-full max-w-sm bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-        <h1 className="text-2xl font-semibold text-gray-900 mb-1">Sign in</h1>
-        <p className="text-sm text-gray-500 mb-6">Career OS</p>
+    <div className="cos-page flex items-center justify-center">
+      <div className="cos-aurora-role" />
+      <div className="cos-layer w-full max-w-sm px-5">
+        <div className="flex items-center gap-2.5 mb-9 justify-center">
+          <div className="cos-brand-mark"><div className="cos-brand-tri" /></div>
+          <span className="text-[17px] font-semibold text-[var(--tx)] tracking-tight">Career<span className="cos-brand-sub">OS</span></span>
+        </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-            <input
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
-          </div>
+        <div className="cos-card-2 p-9">
+          <h1 className="text-2xl font-semibold text-[var(--tx)] tracking-tight mb-1.5">Sign in</h1>
+          <p className="text-[13.5px] text-[var(--tx-mute)] mb-7">Welcome back to Career OS</p>
 
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            <div>
+              <label htmlFor="login-email" className="cos-label">Email</label>
+              <input
+                id="login-email"
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="cos-input"
+              />
+            </div>
+            <div>
+              <label htmlFor="login-password" className="cos-label">Password</label>
+              <input
+                id="login-password"
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="cos-input"
+              />
+            </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-indigo-600 text-white rounded-lg py-2 text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors"
-          >
-            {loading ? 'Signing in…' : 'Sign in'}
-          </button>
-        </form>
+            {error && <p className="text-[13.5px] text-[var(--red)]">{error}</p>}
 
-        <p className="text-center text-sm text-gray-500 mt-4">
-          No account?{' '}
-          <a href="/signup" className="text-indigo-600 hover:underline">
-            Sign up
-          </a>
-        </p>
+            <button
+              type="submit"
+              disabled={loading}
+              className="cos-btn-orange w-full justify-center mt-1"
+            >
+              {loading ? 'Signing in…' : 'Sign in'}
+            </button>
+          </form>
+
+          <p className="text-center text-[13px] text-[var(--tx-mute)] mt-5">
+            No account?{' '}
+            <a href="/signup" className="text-[var(--teal)] no-underline hover:underline">Sign up</a>
+          </p>
+        </div>
       </div>
     </div>
   )

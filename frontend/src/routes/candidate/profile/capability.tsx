@@ -40,17 +40,11 @@ const TIER_LABELS: Record<number, string> = {
   4: 'Trajectory',
 }
 
-const TIER_COLORS: Record<number, string> = {
-  1: 'bg-blue-100 text-blue-700',
-  2: 'bg-purple-100 text-purple-700',
-  3: 'bg-amber-100 text-amber-700',
-  4: 'bg-green-100 text-green-700',
-}
-
-const CONFIDENCE_STYLES: Record<string, string> = {
-  verified: 'bg-green-50 text-green-700 border-green-200',
-  inferred: 'bg-amber-50 text-amber-600 border-amber-200',
-  self_reported: 'bg-gray-50 text-gray-500 border-gray-200',
+const TIER_CHIP: Record<number, string> = {
+  1: 'cos-badge-teal',
+  2: 'cos-badge-orange',
+  3: 'text-[11px] font-semibold text-[#b07aff] bg-[rgba(176,122,255,0.1)] border border-[rgba(176,122,255,0.25)] px-2.5 py-0.5 rounded-full',
+  4: 'cos-chip-green',
 }
 
 const CONFIDENCE_TOOLTIP: Record<string, string> = {
@@ -59,15 +53,21 @@ const CONFIDENCE_TOOLTIP: Record<string, string> = {
   self_reported: 'Taken from what you stated — external evidence would strengthen this',
 }
 
+function confClass(c: string) {
+  if (c === 'verified') return 'cos-conf-verified'
+  if (c === 'inferred') return 'cos-conf-inferred'
+  return 'cos-conf-self'
+}
+
 function ScoreBar({ value }: { value: number }) {
   const pct = Math.round(value * 100)
-  const color = pct >= 70 ? 'bg-green-500' : pct >= 45 ? 'bg-amber-400' : 'bg-gray-300'
+  const colorCls = pct >= 70 ? 'cos-bar-score-teal' : pct >= 45 ? 'cos-bar-score-orange' : 'cos-bar-score-muted'
   return (
-    <div className="flex items-center gap-2">
-      <div className="flex-1 bg-gray-100 rounded-full h-1.5">
-        <div className={`${color} h-1.5 rounded-full`} style={{ width: `${pct}%` }} />
+    <div className="flex items-center gap-3">
+      <div className="cos-bar-track flex-1">
+        <div className={`cos-bar-score ${colorCls} [--bar-pct:${pct}]`} />
       </div>
-      <span className="text-xs text-gray-500 w-7 text-right">{pct}%</span>
+      <span className="text-[12px] text-[var(--tx-mute)] w-8 text-right font-medium">{pct}%</span>
     </div>
   )
 }
@@ -85,119 +85,140 @@ function CapabilityProfilePage() {
   }, [])
 
   if (loading) return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+    <div className="cos-page flex items-center justify-center">
+      <div className="cos-aurora-candidate" />
+      <div className="cos-layer flex flex-col items-center gap-4">
+        <div className="cos-spinner cos-spinner-teal w-10 h-10 border-[3px]" />
+        <p className="text-[14px] text-[var(--tx-dim)]">Loading profile…</p>
+      </div>
     </div>
   )
 
   if (error || !data) return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <p className="text-red-600 text-sm">{error ?? 'Failed to load profile'}</p>
+    <div className="cos-page flex items-center justify-center">
+      <div className="cos-aurora-candidate" />
+      <div className="cos-layer text-center">
+        <p className="text-[13.5px] text-[var(--red)]">{error ?? 'Failed to load profile'}</p>
+      </div>
     </div>
   )
 
   const { candidate, profile, assessment } = data
   const dimensions = assessment?.dimensions ?? []
-  const grouped = [1, 2, 3, 4].map((tier) => ({
-    tier,
-    items: dimensions.filter((d) => d.tier === tier),
-  })).filter((g) => g.items.length > 0)
+  const grouped = [1, 2, 3, 4]
+    .map((tier) => ({ tier, items: dimensions.filter((d) => d.tier === tier) }))
+    .filter((g) => g.items.length > 0)
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-        <span className="font-semibold text-gray-900">Career OS</span>
-        <div className="flex items-center gap-4">
-          <Link to="/candidate/matches" className="text-sm text-indigo-600 hover:underline">My matches</Link>
-          <Link to="/candidate/dashboard" className="text-sm text-gray-500 hover:text-gray-900">Dashboard</Link>
-        </div>
-      </header>
-
-      <main className="max-w-2xl mx-auto px-6 py-10">
-        <div className="flex items-start justify-between mb-6">
-          <div>
-            <h1 className="text-xl font-semibold text-gray-900">{candidate.name}</h1>
-            <p className="text-sm text-gray-500 mt-0.5">{profile?.current_job_title ?? 'No title set'}</p>
+    <div className="cos-page">
+      <div className="cos-aurora-candidate" />
+      <div className="cos-layer">
+        <header className="cos-appbar cos-appbar-narrow">
+          <div className="cos-brand">
+            <div className="cos-brand-mark"><div className="cos-brand-tri" /></div>
+            Career<span className="cos-brand-sub">OS</span>
           </div>
-          <Link to="/candidate/profile/setup"
-            className="text-sm text-gray-500 border border-gray-300 rounded-lg px-3 py-1.5 hover:bg-gray-50">
-            Update profile
-          </Link>
-        </div>
+          <div className="flex-1" />
+          <nav className="cos-nav-pill">
+            <Link to="/candidate/matches" className="cos-nav-link">Matches</Link>
+            <Link to="/candidate/profile/capability" className="cos-nav-link active">Profile</Link>
+            <Link to="/candidate/dashboard" className="cos-nav-link">Dashboard</Link>
+          </nav>
+        </header>
 
-        {/* Underemployment callout */}
-        {assessment?.underemployment_signal && (
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
-            <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide mb-1">Underemployment detected</p>
-            <p className="text-sm text-amber-900 leading-relaxed">
-              Your capability profile significantly exceeds what your current job title suggests. We will surface you to employers looking for these capabilities, not just your last title.
-            </p>
-          </div>
-        )}
-
-        {/* Career intent */}
-        {profile?.career_intent && (
-          <div className="bg-white border border-gray-200 rounded-xl p-5 mb-6">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Career intent</p>
-            <p className="text-sm text-gray-700 leading-relaxed">"{profile.career_intent}"</p>
-            {assessment?.tier_4_trajectory_score !== null && assessment?.tier_4_trajectory_score !== undefined && (
-              <div className="mt-3 flex items-center gap-2">
-                <p className="text-xs text-gray-400">Trajectory signal</p>
-                <ScoreBar value={assessment.tier_4_trajectory_score} />
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Capability dimensions */}
-        {grouped.length === 0 ? (
-          <div className="bg-white border border-dashed border-gray-300 rounded-xl p-12 text-center">
-            <p className="text-gray-400 text-sm">No assessment yet.</p>
-            <Link to="/candidate/profile/setup" className="mt-2 inline-block text-indigo-600 text-sm hover:underline">
-              Build your profile →
+        <main className="max-w-[720px] mx-auto px-6 pb-20 pt-4 flex flex-col gap-5">
+          {/* Profile header */}
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <div className="cos-eyebrow-teal mb-3">Capability profile</div>
+              <h1 className="cos-h1 m-0">{candidate.name}</h1>
+              <p className="text-[14px] text-[var(--tx-dim)] mt-2">{profile?.current_job_title ?? 'No title set'}</p>
+            </div>
+            <Link to="/candidate/profile/setup" className="cos-back text-[13px] flex-shrink-0 mt-1">
+              Update profile
             </Link>
           </div>
-        ) : (
-          <div className="space-y-6">
-            {grouped.map(({ tier, items }) => (
-              <div key={tier}>
-                <div className="flex items-center gap-2 mb-3">
-                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${TIER_COLORS[tier]}`}>
-                    Tier {tier} — {TIER_LABELS[tier]}
-                  </span>
-                </div>
-                <div className="space-y-2">
-                  {items.map((d) => (
-                    <div key={d.name} className="bg-white border border-gray-200 rounded-xl p-4">
-                      <div className="flex items-start justify-between gap-3 mb-2">
-                        <span className="text-sm font-medium text-gray-900">{d.name}</span>
-                        <span
-                          title={CONFIDENCE_TOOLTIP[d.confidence]}
-                          className={`text-xs px-1.5 py-0.5 rounded border cursor-help shrink-0 ${CONFIDENCE_STYLES[d.confidence]}`}
-                        >
-                          {d.confidence.replace('_', ' ')}
-                        </span>
-                      </div>
-                      <ScoreBar value={d.score} />
-                      <p className="text-xs text-gray-400 mt-2 leading-relaxed">{d.evidence_source}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
 
-        <div className="mt-8 flex justify-between items-center">
-          <p className="text-xs text-gray-400">
-            {assessment ? `Assessed ${new Date(assessment.created_at).toLocaleDateString('en-MY', { day: 'numeric', month: 'short', year: 'numeric' })}` : ''}
-          </p>
-          <Link to="/candidate/matches"
-            className="bg-indigo-600 text-white rounded-lg px-5 py-2 text-sm font-medium hover:bg-indigo-700">
-            View my matches →
-          </Link>
-        </div>
-      </main>
+          {/* Underemployment callout */}
+          {assessment?.underemployment_signal && (
+            <div className="cos-surfaced">
+              <div className="cos-sec-label">
+                <svg className="w-[14px] h-[14px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+                Underemployment detected
+              </div>
+              <p className="text-[14.5px] text-[var(--tx-dim)] leading-relaxed">
+                Your capability profile significantly exceeds what your current job title suggests. We will surface you to employers looking for these capabilities — not just your last title.
+              </p>
+            </div>
+          )}
+
+          {/* Career intent */}
+          {profile?.career_intent && (
+            <div className="cos-why-hero">
+              <div className="cos-sec-label">Career intent</div>
+              <p className="lede">"{profile.career_intent}"</p>
+              {assessment?.tier_4_trajectory_score !== null && assessment?.tier_4_trajectory_score !== undefined && (
+                <div className="sig">
+                  <span className="text-[var(--tx-mute)]">Trajectory signal</span>
+                  <div className="flex-1">
+                    <ScoreBar value={assessment.tier_4_trajectory_score} />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Capability dimensions */}
+          {grouped.length === 0 ? (
+            <div className="cos-card-dashed p-14 text-center">
+              <p className="text-[14px] text-[var(--tx-dim)] mb-3">No assessment yet.</p>
+              <Link to="/candidate/profile/setup" className="text-[var(--teal)] text-[13.5px] no-underline hover:underline">
+                Build your profile →
+              </Link>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-7">
+              {grouped.map(({ tier, items }) => (
+                <section key={tier}>
+                  <div className="flex items-center gap-2.5 mb-4">
+                    <span className={TIER_CHIP[tier]}>Tier {tier} — {TIER_LABELS[tier]}</span>
+                    <span className="text-[11.5px] text-[var(--tx-mute)]">{items.length}</span>
+                  </div>
+                  <div className="flex flex-col gap-2.5">
+                    {items.map((d) => (
+                      <div key={d.name} className="cos-card p-5">
+                        <div className="flex items-start justify-between gap-3 mb-3">
+                          <span className="text-[14.5px] font-semibold text-[var(--tx)]">{d.name}</span>
+                          <span
+                            title={CONFIDENCE_TOOLTIP[d.confidence]}
+                            className={`${confClass(d.confidence)} cursor-help flex-shrink-0`}
+                          >
+                            {d.confidence.replace('_', ' ')}
+                          </span>
+                        </div>
+                        <ScoreBar value={d.score} />
+                        <p className="text-[12.5px] text-[var(--tx-mute)] mt-2.5 leading-relaxed">{d.evidence_source}</p>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </div>
+          )}
+
+          <div className="flex items-center justify-between gap-4 mt-2">
+            <p className="text-[12px] text-[var(--tx-mute)]">
+              {assessment
+                ? `Assessed ${new Date(assessment.created_at).toLocaleDateString('en-MY', { day: 'numeric', month: 'short', year: 'numeric' })}`
+                : ''}
+            </p>
+            <Link to="/candidate/matches" className="cos-btn-teal text-[14px]">
+              View my matches
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            </Link>
+          </div>
+        </main>
+      </div>
     </div>
   )
 }

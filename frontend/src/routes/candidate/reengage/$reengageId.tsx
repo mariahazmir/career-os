@@ -35,17 +35,17 @@ interface ReengageRecord {
   } | null
 }
 
-const CONFIDENCE_STYLES: Record<string, string> = {
-  verified: 'bg-green-50 text-green-700 border-green-200',
-  inferred: 'bg-amber-50 text-amber-600 border-amber-200',
-  self_reported: 'bg-gray-50 text-gray-500 border-gray-200',
-}
-
 const TIER_LABELS: Record<number, string> = {
   1: 'Technical',
   2: 'Transferable',
   3: 'Behavioural',
   4: 'Trajectory',
+}
+
+function confClass(c: string) {
+  if (c === 'verified') return 'cos-conf-verified'
+  if (c === 'inferred') return 'cos-conf-inferred'
+  return 'cos-conf-self'
 }
 
 function ReengagePage() {
@@ -82,14 +82,22 @@ function ReengagePage() {
   }
 
   if (loading) return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+    <div className="cos-page flex items-center justify-center">
+      <div className="cos-aurora-candidate" />
+      <div className="cos-layer flex flex-col items-center gap-4">
+        <div className="cos-spinner cos-spinner-teal w-10 h-10 border-[3px]" />
+        <p className="text-[14px] text-[var(--tx-dim)]">Loading…</p>
+      </div>
     </div>
   )
 
   if (error || !record) return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <p className="text-red-600 text-sm">{error ?? 'Record not found'}</p>
+    <div className="cos-page flex items-center justify-center">
+      <div className="cos-aurora-candidate" />
+      <div className="cos-layer text-center">
+        <p className="text-[13.5px] text-[var(--red)]">{error ?? 'Record not found'}</p>
+        <Link to="/candidate/matches" className="inline-block mt-4 text-[var(--teal)] text-[13.5px] no-underline hover:underline">← Back to matches</Link>
+      </div>
     </div>
   )
 
@@ -98,106 +106,122 @@ function ReengagePage() {
   const outreach = record.outreach_message
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link to="/candidate/matches" className="text-sm text-gray-400 hover:text-gray-700">← Matches</Link>
-          <span className="text-gray-300">/</span>
-          <span className="text-sm font-medium text-gray-900">They came back</span>
-        </div>
-      </header>
-
-      <main className="max-w-2xl mx-auto px-6 py-10 space-y-5">
-        {/* Header */}
-        <div className="bg-white border border-gray-200 rounded-xl p-6">
-          <p className="text-xs font-semibold text-indigo-600 uppercase tracking-wide mb-1">Re-engagement</p>
-          <h1 className="text-xl font-semibold text-gray-900 mb-1">
-            {employer?.company_name ?? 'An employer'} wants to reconnect
-          </h1>
-          <p className="text-sm text-gray-500">
-            {role?.title} · {employer?.company_name}
-          </p>
-          <p className="text-xs text-gray-400 mt-2">
-            They reviewed you for this role before. Since then, they've noticed you've grown — and they're back.
-          </p>
-        </div>
-
-        {/* Gap delta — what improved */}
-        <div className="bg-white border border-gray-200 rounded-xl p-6">
-          <h2 className="text-sm font-semibold text-gray-900 mb-1">What's changed since your last evaluation</h2>
-          <p className="text-xs text-gray-400 mb-4">
-            {record.gap_delta.length} capability improvement{record.gap_delta.length !== 1 ? 's' : ''} detected
-          </p>
-          <div className="space-y-3">
-            {record.gap_delta.map((g) => {
-              const prev = Math.round(g.previous_score * 100)
-              const curr = Math.round(g.current_score * 100)
-              const delta = Math.round(g.delta * 100)
-              return (
-                <div key={g.dimension_name} className="flex items-start gap-3 py-3 border-b border-gray-100 last:border-0">
-                  <div className="w-2 h-2 rounded-full mt-1.5 shrink-0 bg-green-500" />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2 mb-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-gray-900">{g.dimension_name}</span>
-                        <span className="text-xs text-gray-400">{TIER_LABELS[g.tier]}</span>
-                      </div>
-                      <span className={`text-xs px-1.5 py-0.5 rounded border ${CONFIDENCE_STYLES[g.confidence] ?? CONFIDENCE_STYLES.self_reported}`}>
-                        {g.confidence.replace('_', ' ')}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-gray-400">{prev}%</span>
-                      <div className="flex-1 h-1.5 bg-gray-100 rounded-full relative">
-                        <div className="absolute inset-y-0 left-0 bg-gray-300 rounded-full" style={{ width: `${prev}%` }} />
-                        <div className="absolute inset-y-0 left-0 bg-green-500 rounded-full transition-all" style={{ width: `${curr}%` }} />
-                      </div>
-                      <span className="text-xs font-medium text-gray-900">{curr}%</span>
-                      <span className="text-xs text-green-600 font-semibold">+{delta}%</span>
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
+    <div className="cos-page">
+      <div className="cos-aurora-candidate" />
+      <div className="cos-layer">
+        <header className="cos-appbar cos-appbar-narrow">
+          <div className="cos-brand">
+            <div className="cos-brand-mark"><div className="cos-brand-tri" /></div>
+            Career<span className="cos-brand-sub">OS</span>
           </div>
-        </div>
+          <div className="flex-1" />
+          <Link to="/candidate/matches" className="cos-back">
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
+            Matches
+          </Link>
+        </header>
 
-        {/* Outreach message */}
-        {outreach && (
-          <div className="bg-white border border-gray-200 rounded-xl p-6">
-            <h2 className="text-sm font-semibold text-gray-900 mb-3">Their message to you</h2>
-            <p className="text-sm text-gray-700 leading-relaxed bg-gray-50 rounded-lg p-4 border border-gray-100">
-              {outreach.draft_text}
+        <main className="max-w-[680px] mx-auto px-6 pb-36 pt-4 flex flex-col gap-5">
+          {/* Header */}
+          <div>
+            <div className="cos-badge-teal mb-4">They came back</div>
+            <h1 className="cos-h1 m-0">{employer?.company_name ?? 'An employer'} wants to reconnect</h1>
+            <p className="text-[14.5px] text-[var(--tx-dim)] mt-3">
+              {role?.title} · {employer?.company_name}
+            </p>
+            <p className="text-[13px] text-[var(--tx-mute)] mt-2 leading-relaxed max-w-[52ch]">
+              They reviewed you for this role before. Since then, they've noticed you've grown — and they're back.
             </p>
           </div>
-        )}
 
-        {/* Accept / Decline */}
-        <div className="bg-white border border-gray-200 rounded-xl p-6">
-          {decided === 'accepted' ? (
-            <div className="text-center py-4">
-              <p className="text-green-600 font-medium text-sm">You accepted — {employer?.company_name} will be in touch.</p>
-              <button type="button" onClick={() => navigate({ to: '/candidate/matches' })}
-                className="mt-3 text-indigo-600 text-sm hover:underline">← Back to matches</button>
+          {/* Gap delta — what improved */}
+          <div className="cos-card p-6">
+            <h2 className="text-[15px] font-semibold text-[var(--tx)] mb-1">What's changed since your last evaluation</h2>
+            <p className="text-[12.5px] text-[var(--tx-mute)] mb-5">
+              {record.gap_delta.length} capability improvement{record.gap_delta.length !== 1 ? 's' : ''} detected
+            </p>
+            <div className="flex flex-col gap-0">
+              {record.gap_delta.map((g) => {
+                const prev = Math.round(g.previous_score * 100)
+                const curr = Math.round(g.current_score * 100)
+                const delta = Math.round(g.delta * 100)
+                return (
+                  <div key={g.dimension_name} className="cos-trow border-[var(--line)] first:border-t-0 border-t border-solid py-4 flex flex-col gap-2">
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <div className="flex items-center gap-2.5">
+                        <span className="text-[14px] font-semibold text-[var(--tx)]">{g.dimension_name}</span>
+                        <span className="text-[11px] text-[var(--tx-mute)]">{TIER_LABELS[g.tier]}</span>
+                        <span className={confClass(g.confidence)}>{g.confidence.replace('_', ' ')}</span>
+                      </div>
+                      <span className="text-[13px] font-semibold text-[#4ade80]">+{delta}%</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-[11.5px] text-[var(--tx-mute)] w-8 text-right">{prev}%</span>
+                      <div className={`cos-bar-delta [--prev:${prev}] [--curr:${curr}]`}>
+                        <div className="cos-bar-delta-prev" />
+                        <div className="cos-bar-delta-teal" />
+                      </div>
+                      <span className="text-[12px] font-semibold text-[var(--tx)] w-8">{curr}%</span>
+                    </div>
+                  </div>
+                )
+              })}
             </div>
-          ) : decided === 'declined' ? (
-            <div className="text-center py-4">
-              <p className="text-gray-500 text-sm">You declined this re-engagement.</p>
-              <button type="button" onClick={() => navigate({ to: '/candidate/matches' })}
-                className="mt-3 text-indigo-600 text-sm hover:underline">← Back to matches</button>
+          </div>
+
+          {/* Outreach message */}
+          {outreach && (
+            <div className="cos-why-hero">
+              <div className="cos-sec-label">
+                <svg className="w-[14px] h-[14px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                Their message to you
+              </div>
+              <p className="lede">{outreach.draft_text}</p>
             </div>
-          ) : (
-            <div>
-              <p className="text-sm font-medium text-gray-900 mb-1">Are you open to reconnecting?</p>
-              <p className="text-xs text-gray-400 mb-4">
-                If you accept, {employer?.company_name ?? 'the employer'} will receive your updated profile and the message above.
-              </p>
+          )}
+        </main>
+
+        {/* Sticky decision bar */}
+        {decided === 'accepted' ? (
+          <div className="cos-sticky">
+            <div className="max-w-[680px] mx-auto px-6 py-4 flex items-center justify-between gap-4">
+              <div>
+                <p className="text-[15px] font-semibold text-[var(--teal)]">You're open to reconnecting</p>
+                <p className="text-[12.5px] text-[var(--tx-mute)] mt-0.5">{employer?.company_name ?? 'The employer'} will be in touch.</p>
+              </div>
+              <button type="button" onClick={() => navigate({ to: '/candidate/matches' })} className="cos-back text-[13px]">
+                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
+                Back
+              </button>
+            </div>
+          </div>
+        ) : decided === 'declined' ? (
+          <div className="cos-sticky">
+            <div className="max-w-[680px] mx-auto px-6 py-4 flex items-center justify-between gap-4">
+              <p className="text-[14px] text-[var(--tx-dim)]">You declined this re-engagement.</p>
+              <button type="button" onClick={() => navigate({ to: '/candidate/matches' })} className="cos-back text-[13px]">
+                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
+                Back to matches
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="cos-sticky">
+            <div className="max-w-[680px] mx-auto px-6 py-5">
+              <div className="flex items-center justify-between gap-4 mb-3.5">
+                <div>
+                  <p className="text-[14.5px] font-semibold text-[var(--tx)]">Are you open to reconnecting?</p>
+                  <p className="text-[12px] text-[var(--tx-mute)] mt-0.5">
+                    If you accept, {employer?.company_name ?? 'the employer'} receives your updated profile and the message above.
+                  </p>
+                </div>
+              </div>
               <div className="flex gap-3">
                 <button
                   type="button"
                   onClick={() => respond('accepted')}
                   disabled={responding}
-                  className="flex-1 bg-indigo-600 text-white rounded-lg py-2.5 text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+                  className="cos-btn-teal flex-1 text-[15px] py-3.5 disabled:opacity-50"
                 >
                   {responding ? 'Processing…' : "Yes, I'm open to it"}
                 </button>
@@ -205,15 +229,16 @@ function ReengagePage() {
                   type="button"
                   onClick={() => respond('declined')}
                   disabled={responding}
-                  className="flex-1 border border-gray-300 text-gray-700 rounded-lg py-2.5 text-sm hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                  className="cos-btn-decline"
                 >
                   Not right now
                 </button>
               </div>
+              {error && <p className="text-[12.5px] text-[var(--red)] mt-2">{error}</p>}
             </div>
-          )}
-        </div>
-      </main>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

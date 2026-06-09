@@ -1,4 +1,4 @@
-import { createFileRoute, redirect, Link, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { api } from '../../../../lib/api'
 
@@ -24,23 +24,18 @@ interface RoleWithMap {
   role_capability_map: Array<{ id: string; dimensions: Dimension[]; employer_edited: boolean }>
 }
 
-const TIER_LABELS: Record<number, string> = { 1: 'Technical', 2: 'Transferable', 3: 'Behavioural', 4: 'Trajectory' }
-const TIER_COLORS: Record<number, string> = {
-  1: 'bg-blue-100 text-blue-700',
-  2: 'bg-purple-100 text-purple-700',
-  3: 'bg-amber-100 text-amber-700',
-  4: 'bg-green-100 text-green-700',
+const TIER_LABELS: Record<number, string> = {
+  1: 'Technical',
+  2: 'Transferable',
+  3: 'Behavioural',
+  4: 'Trajectory',
 }
 
-function ScoreBar({ value }: { value: number }) {
-  return (
-    <div className="flex items-center gap-2">
-      <div className="flex-1 bg-gray-100 rounded-full h-1.5">
-        <div className="bg-indigo-500 h-1.5 rounded-full" style={{ width: `${value * 100}%` }} />
-      </div>
-      <span className="text-xs text-gray-500 w-8 text-right">{Math.round(value * 100)}%</span>
-    </div>
-  )
+const TIER_CHIP: Record<number, string> = {
+  1: 'cos-badge-teal',
+  2: 'cos-badge-orange',
+  3: 'text-[11px] font-semibold text-[#b07aff] bg-[rgba(176,122,255,0.1)] border border-[rgba(176,122,255,0.25)] px-2.5 py-0.5 rounded-full',
+  4: 'cos-chip-green',
 }
 
 function CapabilityMapPage() {
@@ -87,121 +82,153 @@ function CapabilityMapPage() {
   }
 
   if (loading) return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="inline-block w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+    <div className="cos-page flex items-center justify-center">
+      <div className="cos-aurora-role" />
+      <div className="cos-layer flex flex-col items-center gap-4">
+        <div className="cos-spinner w-10 h-10 border-[3px]" />
+        <p className="text-[14px] text-[var(--tx-dim)]">Loading capability map…</p>
+      </div>
     </div>
   )
 
   if (error) return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <p className="text-red-600 text-sm">{error}</p>
+    <div className="cos-page flex items-center justify-center">
+      <div className="cos-aurora-role" />
+      <div className="cos-layer">
+        <p className="text-[13.5px] text-[var(--red)]">{error}</p>
+      </div>
     </div>
   )
 
-  const grouped = [1, 2, 3, 4].map((tier) => ({
-    tier,
-    items: dimensions.map((d, i) => ({ ...d, index: i })).filter((d) => d.tier === tier),
-  })).filter((g) => g.items.length > 0)
+  const grouped = [1, 2, 3, 4]
+    .map((tier) => ({
+      tier,
+      items: dimensions.map((d, i) => ({ ...d, index: i })).filter((d) => d.tier === tier),
+    }))
+    .filter((g) => g.items.length > 0)
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link to="/employer/dashboard" className="text-sm text-gray-400 hover:text-gray-700">← Dashboard</Link>
-          <span className="text-gray-300">/</span>
-          <span className="text-sm font-medium text-gray-900">{role?.title}</span>
-        </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="text-sm text-gray-600 border border-gray-300 rounded-lg px-3 py-1.5 hover:bg-gray-50 disabled:opacity-50"
-          >
-            {saving ? 'Saving…' : saved ? '✓ Saved' : 'Save changes'}
-          </button>
-          <button
-            onClick={handleFindCandidates}
-            className="bg-indigo-600 text-white rounded-lg px-4 py-1.5 text-sm font-medium hover:bg-indigo-700"
-          >
-            Find candidates →
-          </button>
-        </div>
-      </header>
+    <div className="cos-page">
+      <div className="cos-aurora-role" />
+      <div className="cos-layer">
+        <header className="cos-appbar">
+          <div className="cos-brand">
+            <div className="cos-brand-mark"><div className="cos-brand-tri" /></div>
+            Career<span className="cos-brand-sub">OS</span>
+          </div>
+          <div className="flex-1" />
+          <div className="cos-steps">
+            <span className="text-[var(--tx-mute)]">1. Define role</span>
+            <span className="cos-step-now"><span className="cos-step-dot" /><strong className="text-[var(--tx)]">2.</strong> Capability profile</span>
+            <span className="text-[var(--tx-mute)]">→ Discovery pool</span>
+          </div>
+          <div className="flex items-center gap-2.5 ml-4">
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={saving}
+              className="cos-btn-ghost disabled:opacity-50"
+            >
+              {saving ? 'Saving…' : saved ? '✓ Saved' : 'Save changes'}
+            </button>
+            <button
+              type="button"
+              onClick={handleFindCandidates}
+              className="cos-btn-orange-sm"
+            >
+              Find candidates
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            </button>
+          </div>
+        </header>
 
-      <main className="max-w-3xl mx-auto px-6 py-10">
-        <h1 className="text-xl font-semibold text-gray-900 mb-1">Capability map</h1>
-        <p className="text-sm text-gray-500 mb-8">
-          We extracted {dimensions.length} capability requirements from your role description. Review and adjust before running the match.
-        </p>
+        <main className="max-w-[820px] mx-auto px-8 pb-20 pt-2">
+          <div className="mb-8">
+            <div className="cos-eyebrow-orange mb-3">Capability map</div>
+            <h1 className="cos-h1 m-0">{role?.title}</h1>
+            <p className="text-[14.5px] text-[var(--tx-dim)] mt-3 leading-relaxed max-w-[56ch]">
+              {dimensions.length} capability requirements extracted. Review and adjust before running the match — or go straight to discovery.
+            </p>
+          </div>
 
-        <div className="space-y-8">
-          {grouped.map(({ tier, items }) => (
-            <div key={tier}>
-              <div className="flex items-center gap-2 mb-3">
-                <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${TIER_COLORS[tier]}`}>
-                  Tier {tier} — {TIER_LABELS[tier]}
-                </span>
-              </div>
-              <div className="space-y-2">
-                {items.map((d) => (
-                  <div key={d.index} className="bg-white border border-gray-200 rounded-xl p-4">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="font-medium text-gray-900 text-sm">{d.name}</span>
-                          {d.must_have && (
-                            <span className="text-xs font-semibold bg-red-50 text-red-600 border border-red-200 px-1.5 py-0.5 rounded">
-                              Must-have
-                            </span>
-                          )}
-                        </div>
-                        <div className="space-y-2">
+          <div className="flex flex-col gap-8">
+            {grouped.map(({ tier, items }) => (
+              <section key={tier}>
+                <div className="flex items-center gap-3 mb-4">
+                  <span className={TIER_CHIP[tier]}>Tier {tier} — {TIER_LABELS[tier]}</span>
+                  <span className="text-[12px] text-[var(--tx-mute)]">{items.length} capability{items.length !== 1 ? 's' : ''}</span>
+                </div>
+
+                <div className="flex flex-col gap-2.5">
+                  {items.map((d) => (
+                    <div key={d.index} className="cos-card p-5">
+                      <div className="flex items-start justify-between gap-5">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2.5 mb-3 flex-wrap">
+                            <span className="text-[14.5px] font-semibold text-[var(--tx)]">{d.name}</span>
+                            {d.must_have && (
+                              <span className="text-[10px] font-semibold text-[var(--red)] bg-[rgba(232,75,69,0.1)] border border-[rgba(232,75,69,0.3)] px-2 py-0.5 rounded-full uppercase tracking-wide">
+                                Must-have
+                              </span>
+                            )}
+                          </div>
                           <div>
-                            <div className="flex justify-between text-xs text-gray-500 mb-1">
-                              <span>Required score</span>
+                            <div className="flex items-center justify-between mb-1.5">
+                              <span className="text-[11px] text-[var(--tx-mute)] uppercase tracking-wider font-medium">Required score</span>
+                              <span className="text-[13px] font-semibold text-[var(--tx)]">{Math.round(d.required_score * 100)}%</span>
                             </div>
-                            <ScoreBar value={d.required_score} />
+                            <div className="cos-bar-track">
+                              <div className={`cos-bar-score cos-bar-score-orange [--bar-pct:${Math.round(d.required_score * 100)}]`} />
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-4 flex-shrink-0">
+                          <div className="text-center">
+                            <p className="text-[10.5px] text-[var(--tx-mute)] mb-1.5 uppercase tracking-wider font-medium">Weight</p>
+                            <input
+                              type="number"
+                              min="0.5"
+                              max="2.0"
+                              step="0.1"
+                              value={d.weight}
+                              aria-label={`Weight for ${d.name}`}
+                              onChange={(e) => updateDimension(d.index, 'weight', parseFloat(e.target.value))}
+                              className="w-16 cos-input text-center text-[13px] py-2 px-2"
+                            />
+                          </div>
+                          <div className="text-center">
+                            <p className="text-[10.5px] text-[var(--tx-mute)] mb-1.5 uppercase tracking-wider font-medium">Must-have</p>
+                            <button
+                              type="button"
+                              aria-label={`Toggle must-have for ${d.name}`}
+                              onClick={() => updateDimension(d.index, 'must_have', !d.must_have)}
+                              className={`w-10 h-5 rounded-full transition-colors relative ${d.must_have ? 'bg-[var(--red)]' : 'bg-[var(--surface-3)]'}`}
+                            >
+                              <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${d.must_have ? 'left-[22px]' : 'left-0.5'}`} />
+                            </button>
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3 shrink-0">
-                        <div className="text-center">
-                          <p className="text-xs text-gray-400 mb-1">Weight</p>
-                          <input
-                            type="number"
-                            min="0.5" max="2.0" step="0.1"
-                            value={d.weight}
-                            onChange={(e) => updateDimension(d.index, 'weight', parseFloat(e.target.value))}
-                            className="w-16 border border-gray-300 rounded px-2 py-1 text-xs text-center focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                          />
-                        </div>
-                        <div className="text-center">
-                          <p className="text-xs text-gray-400 mb-1">Must-have</p>
-                          <button
-                            onClick={() => updateDimension(d.index, 'must_have', !d.must_have)}
-                            className={`w-10 h-5 rounded-full transition-colors ${d.must_have ? 'bg-red-500' : 'bg-gray-200'}`}
-                          >
-                            <div className={`w-4 h-4 bg-white rounded-full shadow transition-transform mx-0.5 ${d.must_have ? 'translate-x-5' : 'translate-x-0'}`} />
-                          </button>
-                        </div>
-                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
+                  ))}
+                </div>
+              </section>
+            ))}
+          </div>
 
-        <div className="mt-8 flex justify-end">
-          <button
-            onClick={handleFindCandidates}
-            className="bg-indigo-600 text-white rounded-lg px-6 py-2.5 text-sm font-medium hover:bg-indigo-700"
-          >
-            Find candidates →
-          </button>
-        </div>
-      </main>
+          <div className="mt-10 flex justify-end">
+            <button
+              type="button"
+              onClick={handleFindCandidates}
+              className="cos-btn-orange text-[16px] px-9 py-4"
+            >
+              Find candidates
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            </button>
+          </div>
+        </main>
+      </div>
     </div>
   )
 }

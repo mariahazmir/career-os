@@ -25,7 +25,6 @@ function OutreachPage() {
   const [message, setMessage] = useState<OutreachMessage | null>(null)
   const [text, setText] = useState('')
   const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -68,122 +67,143 @@ function OutreachPage() {
   }
 
   if (loading) return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+    <div className="cos-page flex items-center justify-center">
+      <div className="cos-aurora-role" />
+      <div className="cos-layer flex flex-col items-center gap-4">
+        <div className="cos-spinner w-10 h-10 border-[3px]" />
+        <p className="text-[14px] text-[var(--tx-dim)]">Loading…</p>
+      </div>
     </div>
   )
 
   if (error && !message) return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <p className="text-red-600 text-sm">{error}</p>
+    <div className="cos-page flex items-center justify-center">
+      <div className="cos-aurora-role" />
+      <div className="cos-layer">
+        <p className="text-[13.5px] text-[var(--red)]">{error}</p>
+      </div>
     </div>
   )
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
+    <div className="cos-page">
+      <div className="cos-aurora-role" />
+      <div className="cos-layer">
+        <header className="cos-appbar">
+          <div className="cos-brand">
+            <div className="cos-brand-mark"><div className="cos-brand-tri" /></div>
+            Career<span className="cos-brand-sub">OS</span>
+          </div>
+          <div className="flex-1" />
           <Link
             to="/employer/role/$roleId/pool/$matchId"
             params={{ roleId, matchId }}
-            className="text-sm text-gray-400 hover:text-gray-700"
+            className="cos-back"
           >
-            ← Back
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
+            Back to candidate
           </Link>
-          <span className="text-gray-300">/</span>
-          <span className="text-sm font-medium text-gray-900">Outreach message</span>
-        </div>
-      </header>
+        </header>
 
-      <main className="max-w-2xl mx-auto px-6 py-10 space-y-6">
-        {sent ? (
-          <div className="bg-white border border-gray-200 rounded-xl p-10 text-center">
-            <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
+        <main className="max-w-[620px] mx-auto px-6 pb-20 pt-4 flex flex-col gap-5">
+          {sent ? (
+            <div className="cos-card p-14 text-center flex flex-col items-center gap-5">
+              <div className="w-14 h-14 rounded-full bg-[var(--teal-soft)] border border-[rgba(111,198,194,0.3)] flex items-center justify-center">
+                <svg className="w-7 h-7 text-[var(--teal)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <div>
+                <h2 className="text-[20px] font-semibold text-[var(--tx)] tracking-tight mb-1.5">Message queued</h2>
+                <p className="text-[14px] text-[var(--tx-dim)]">The candidate will receive this when they accept the match.</p>
+                <p className="text-[12px] text-[var(--tx-mute)] mt-2.5">Redirecting to pool…</p>
+              </div>
             </div>
-            <h2 className="text-lg font-semibold text-gray-900 mb-1">Message queued</h2>
-            <p className="text-sm text-gray-500">The candidate will receive this when they accept the match.</p>
-            <p className="text-xs text-gray-400 mt-3">Redirecting to pool…</p>
-          </div>
-        ) : (
-          <>
-            <div className="bg-white border border-gray-200 rounded-xl p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h1 className="text-base font-semibold text-gray-900">Review outreach message</h1>
-                <span className={`text-sm font-medium tabular-nums ${isOverLimit ? 'text-red-500' : charCount > 360 ? 'text-amber-500' : 'text-gray-400'}`}>
-                  {charCount} / 400
-                </span>
+          ) : (
+            <>
+              <div>
+                <div className="cos-eyebrow-orange mb-3">Outreach message</div>
+                <h1 className="cos-h1 m-0">Review before sending</h1>
+                <p className="text-[14.5px] text-[var(--tx-dim)] mt-3 leading-relaxed max-w-[52ch]">
+                  This message is delivered after the candidate accepts — not immediately. Edit freely; the 400-character limit keeps it human.
+                </p>
               </div>
 
-              <textarea
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                rows={6}
-                disabled={sending}
-                className={`w-full border rounded-lg px-4 py-3 text-sm text-gray-800 leading-relaxed resize-none focus:outline-none focus:ring-2 transition-colors ${
-                  isOverLimit
-                    ? 'border-red-300 focus:ring-red-200'
-                    : 'border-gray-200 focus:ring-indigo-200'
-                }`}
-              />
+              <div className="cos-card p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-[13px] font-semibold text-[var(--tx-dim)] uppercase tracking-wider">Draft</p>
+                  <span className={`text-[13px] font-semibold tabular-nums ${isOverLimit ? 'text-[var(--red)]' : charCount > 360 ? 'text-[var(--orange)]' : 'text-[var(--tx-mute)]'}`}>
+                    {charCount} / 400
+                  </span>
+                </div>
 
-              {isOverLimit && (
-                <p className="text-xs text-red-500 mt-2">
-                  {charCount - 400} characters over the limit — shorten before sending.
-                </p>
-              )}
+                <div className={`cos-textarea-soft ${isOverLimit ? '[border-color:var(--red)]' : ''}`}>
+                  <textarea
+                    aria-label="Outreach message text"
+                    value={text}
+                    onChange={(e) => setText(e.target.value)}
+                    rows={6}
+                    disabled={sending}
+                  />
+                </div>
 
-              {message?.employer_edited && !isEdited && (
-                <p className="text-xs text-indigo-500 mt-2">Your edits are saved.</p>
-              )}
+                {isOverLimit && (
+                  <p className="text-[12.5px] text-[var(--red)] mt-2">
+                    {charCount - 400} characters over the limit — shorten before sending.
+                  </p>
+                )}
 
-              {isEdited && (
-                <p className="text-xs text-gray-400 mt-2">
-                  Editing from the AI draft.{' '}
-                  <button
-                    type="button"
-                    onClick={() => setText(originalDraft.current)}
-                    className="text-indigo-500 hover:underline"
-                  >
-                    Restore original
-                  </button>
-                </p>
-              )}
-            </div>
+                {message?.employer_edited && !isEdited && (
+                  <p className="text-[12px] text-[var(--teal)] mt-2">Your edits are saved.</p>
+                )}
 
-            <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
-              <p className="text-xs text-gray-500 leading-relaxed">
-                This message is delivered to the candidate after they accept the match — not immediately.
-                The candidate controls whether to engage further.
-              </p>
-            </div>
+                {isEdited && (
+                  <p className="text-[12px] text-[var(--tx-mute)] mt-2">
+                    Editing from the AI draft.{' '}
+                    <button
+                      type="button"
+                      onClick={() => setText(originalDraft.current)}
+                      className="text-[var(--orange)] hover:underline bg-transparent border-none cursor-pointer font-inherit text-[12px] p-0"
+                    >
+                      Restore original
+                    </button>
+                  </p>
+                )}
+              </div>
 
-            {error && (
-              <p className="text-sm text-red-600">{error}</p>
-            )}
+              <div className="cos-explainer">
+                <div className="cos-explainer-icon">
+                  <svg className="w-[17px] h-[17px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                </div>
+                <span>Delivered only after the candidate opts in. They control whether to engage further.</span>
+              </div>
 
-            <div className="flex gap-3">
-              <Link
-                to="/employer/role/$roleId/pool/$matchId"
-                params={{ roleId, matchId }}
-                className="flex-1 text-center border border-gray-300 text-gray-700 rounded-lg py-2.5 text-sm hover:bg-gray-50 transition-colors"
-              >
-                Back to candidate
-              </Link>
-              <button
-                type="button"
-                onClick={handleSend}
-                disabled={sending || isOverLimit}
-                className="flex-1 bg-indigo-600 text-white rounded-lg py-2.5 text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors"
-              >
-                {sending ? 'Sending…' : isEdited ? 'Save & send' : 'Send as written'}
-              </button>
-            </div>
-          </>
-        )}
-      </main>
+              {error && <p className="text-[13px] text-[var(--red)]">{error}</p>}
+
+              <div className="flex gap-3">
+                <Link
+                  to="/employer/role/$roleId/pool/$matchId"
+                  params={{ roleId, matchId }}
+                  className="cos-btn-ghost flex-1 text-center"
+                >
+                  Back to candidate
+                </Link>
+                <button
+                  type="button"
+                  onClick={handleSend}
+                  disabled={sending || isOverLimit}
+                  className="cos-btn-orange flex-1 disabled:opacity-50"
+                >
+                  {sending ? 'Sending…' : isEdited ? 'Save & send' : 'Send as written'}
+                  {!sending && (
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                  )}
+                </button>
+              </div>
+            </>
+          )}
+        </main>
+      </div>
     </div>
   )
 }
