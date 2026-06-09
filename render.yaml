@@ -3,7 +3,7 @@ services:
     name: career-os-api
     runtime: node
     rootDir: api
-    buildCommand: npm install && npm run build
+    buildCommand: npm install --include=dev && npm run build
     startCommand: npm start
     nodeVersion: 20
     healthCheckPath: /health
