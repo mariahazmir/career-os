@@ -173,13 +173,3 @@ Set these environment variables in the Render dashboard:
 **API service:** `GEMINI_API_KEY`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `ALLOWED_ORIGINS`
 
 **Frontend static site:** `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_API_URL`
-
----
-
-## Hackathon context
-
-| | |
-|---|---|
-| **Competition** | Talentbank Tech Hackathon 2026 |
-| **Deadline** | 15 June 2026 |
-| **Judging** | Product & UX Thinking 30% · Technical Execution 25% · Real-World Relevance 20% · AI Craft 15% · Presentation 10% |
