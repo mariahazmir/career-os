@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
+import { useRouter } from '@tanstack/react-router'
 
 export interface AuthContext {
   session: Session | null
@@ -33,8 +34,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe()
   }, [])
 
+  const router = useRouter()
+
   const signOut = async () => {
     await supabase.auth.signOut()
+    await router.navigate({ to: '/login' })
   }
 
   return (
