@@ -28,9 +28,13 @@ function EmployerDashboard() {
   const { session, signOut } = useAuth()
   const [roles, setRoles] = useState<Role[]>([])
   const [loading, setLoading] = useState(true)
+  const [fetchError, setFetchError] = useState<string | null>(null)
 
   useEffect(() => {
-    api.get<Role[]>('/role').then(setRoles).catch(console.error).finally(() => setLoading(false))
+    api.get<Role[]>('/role')
+      .then(setRoles)
+      .catch((e: Error) => setFetchError(e.message))
+      .finally(() => setLoading(false))
   }, [])
 
   return (
@@ -60,6 +64,13 @@ function EmployerDashboard() {
               + Define a role
             </Link>
           </div>
+
+          {fetchError && (
+            <div className="cos-card p-5 mb-4 border-[var(--red)] flex flex-col gap-1">
+              <p className="text-[13.5px] font-semibold text-[var(--red)]">Failed to load roles</p>
+              <p className="text-[12.5px] text-[var(--tx-dim)] font-mono break-all">{fetchError}</p>
+            </div>
+          )}
 
           {loading ? (
             <div className="flex flex-col gap-3">
