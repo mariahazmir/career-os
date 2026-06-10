@@ -43,10 +43,16 @@ const EMPLOYER = {
 }
 
 const HIRING_MANAGER = {
-  name: 'Faridah Noor',
-  email: 'faridah@kineticanalytics.my',
+  name: 'Ben Ho',
+  email: 'benho@kineticanalytics.my',
   password: 'Demo2026!',
   role: 'admin' as const,
+}
+
+const DEMO_CANDIDATE = {
+  name: 'Amirah Zulkifli',
+  email: 'amirah@candidate.dev',
+  password: 'Demo2026!',
 }
 
 // ── Roles ──────────────────────────────────────────────────────────────────
@@ -530,6 +536,19 @@ async function seed() {
     console.log(`  ✓ employer_user.id = ${empUser.id}`)
   }
 
+  // 3b. Create demo candidate auth user
+  console.log(`▶ Creating auth user for demo candidate ${DEMO_CANDIDATE.email}…`)
+  const { error: candAuthError } = await db.auth.admin.createUser({
+    email: DEMO_CANDIDATE.email,
+    password: DEMO_CANDIDATE.password,
+    email_confirm: true,
+    user_metadata: { name: DEMO_CANDIDATE.name, role: 'candidate' },
+  })
+  if (candAuthError && !candAuthError.message.includes('already registered')) {
+    throw new Error(`Candidate auth user creation failed: ${candAuthError.message}`)
+  }
+  console.log(`  ✓ candidate auth user ready`)
+
   // 4. Create roles + AI capability maps
   console.log('\n▶ Creating roles and extracting capability maps…')
   const seededRoles: Array<{
@@ -770,8 +789,8 @@ async function seed() {
 
   console.log('\n═══════════════════════════════════════')
   console.log(`Seed complete. ${CANDIDATES.length} candidates processed.`)
-  console.log(`Employer login: ${HIRING_MANAGER.email} / ${HIRING_MANAGER.password}`)
-  console.log('Navigate to /employer/dashboard → Data Analyst role → pool.')
+  console.log(`Employer login:  ${HIRING_MANAGER.email} / ${HIRING_MANAGER.password}`)
+  console.log(`Candidate login: ${DEMO_CANDIDATE.email} / ${DEMO_CANDIDATE.password}`)
   console.log('═══════════════════════════════════════')
 }
 
