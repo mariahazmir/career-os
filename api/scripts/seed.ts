@@ -787,6 +787,59 @@ async function seed() {
     } // end role block
   } // end roles loop
 
+  // 7. Express interest on Amirah's best match so she sees it when she logs in
+  console.log('\n▶ Expressing interest on demo candidate matches…')
+  const { data: amirahCandidate } = await db
+    .from('candidate')
+    .select('id')
+    .eq('email', DEMO_CANDIDATE.email)
+    .single()
+
+  if (amirahCandidate) {
+    const { data: amirahMatches } = await db
+      .from('match')
+      .select('id, overall_score, role(title)')
+      .eq('candidate_id', amirahCandidate.id)
+      .eq('status', 'pending')
+      .order('overall_score', { ascending: false })
+      .limit(3)
+
+    for (const m of amirahMatches ?? []) {
+      // Mark notified
+      await db.from('match').update({ status: 'notified' as never }).eq('id', m.id)
+
+      // Check if outreach already exists
+      const { data: existingMsg } = await db
+        .from('outreach_message')
+        .select('id')
+        .eq('match_id', m.id)
+        .single()
+
+      if (!existingMsg) {
+        const { data: explanation } = await db
+          .from('match_explanation')
+          .select('strong_dimensions, employer_facing_text')
+          .eq('match_id', m.id)
+          .single()
+
+        const role = Array.isArray(m.role) ? m.role[0] : m.role as { title: string } | null
+
+        const draft = `Hi Amirah, your background in CS and Python analytics caught our attention for our ${role?.title ?? 'role'}. We'd love to connect — would you be open to a quick conversation?`
+        await db.from('outreach_message').insert({
+          match_id: m.id,
+          draft_text: draft,
+          employer_edited: false,
+          character_count: draft.length,
+          delivery_status: 'draft' as never,
+        })
+        console.log(`  ✓ ${role?.title ?? m.id} — notified + outreach drafted`)
+        void explanation // used implicitly
+      } else {
+        console.log(`  ✓ ${m.id} — already notified`)
+      }
+    }
+  }
+
   console.log('\n═══════════════════════════════════════')
   console.log(`Seed complete. ${CANDIDATES.length} candidates processed.`)
   console.log(`Employer login:  ${HIRING_MANAGER.email} / ${HIRING_MANAGER.password}`)
