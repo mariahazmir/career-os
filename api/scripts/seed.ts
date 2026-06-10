@@ -661,10 +661,10 @@ async function seed() {
     console.log(`✓ (underemployed: ${c.profile.underemployment_flag}, signal: ${assessment.underemployment_signal})`)
   }
 
-  // 6. Run match pipeline for Data Analyst role
-  const dataAnalystRole = seededRoles.find((r) => r.title === 'Data Analyst')
-  if (dataAnalystRole) {
-    console.log('\n▶ Running match pipeline for Data Analyst role…')
+  // 6. Run match pipeline for all seeded roles
+  for (const seededRole of seededRoles) {
+    console.log(`\n▶ Running match pipeline for ${seededRole.title}…`);
+    {
 
     // Fetch all candidates + their latest assessments
     const { data: profiles } = await db
@@ -683,7 +683,7 @@ async function seed() {
         .from('match')
         .select('id')
         .eq('candidate_id', candidate.id)
-        .eq('role_id', dataAnalystRole.id)
+        .eq('role_id', seededRole.id)
         .limit(1)
         .single()
       if (existingMatch) { console.log(`  ✓ ${candidate.name} — already matched`); continue }
@@ -703,8 +703,8 @@ async function seed() {
       try {
         matchScore = await withRetry(() => scoreAndExplainMatch({
           candidateDimensions: assessment.dimensions as CandidateCapabilityDimension[],
-          roleDimensions: dataAnalystRole.dimensions,
-          contextNotes: dataAnalystRole.contextNotes,
+          roleDimensions: seededRole.dimensions,
+          contextNotes: seededRole.contextNotes,
           candidateSummary: {
             name: candidate.name,
             current_job_title: profile.current_job_title,
@@ -722,9 +722,9 @@ async function seed() {
         .from('match')
         .insert({
           candidate_id: candidate.id,
-          role_id: dataAnalystRole.id,
+          role_id: seededRole.id,
           assessment_id: assessment.id,
-          map_id: dataAnalystRole.mapId,
+          map_id: seededRole.mapId,
           overall_score: matchScore.overall_score,
           tier_1_score: matchScore.tier_scores.tier_1,
           tier_2_score: matchScore.tier_scores.tier_2,
@@ -765,7 +765,8 @@ async function seed() {
           console.log(`    ${pct}%  ${name}${bypass ? '  ← ATS BYPASS' : ''}`)
         })
     }
-  }
+    } // end role block
+  } // end roles loop
 
   console.log('\n═══════════════════════════════════════')
   console.log(`Seed complete. ${CANDIDATES.length} candidates processed.`)
