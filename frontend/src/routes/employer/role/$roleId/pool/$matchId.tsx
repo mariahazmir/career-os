@@ -9,33 +9,37 @@ export const Route = createFileRoute('/employer/role/$roleId/pool/$matchId')({
   component: MatchDetailPage,
 })
 
+interface MatchExplanation {
+  strong_dimensions: Dimension[]
+  partial_dimensions: Dimension[]
+  gap_dimensions: Dimension[]
+  ats_bypass_reasoning?: string
+  employer_facing_text: string
+  candidate_facing_text: string
+  bridge_suggestion?: string
+}
+
+interface CandidateProfile {
+  degree: string | null
+  field_of_study: string | null
+  current_job_title: string | null
+  current_employer: string | null
+  years_of_experience: number | null
+  underemployment_flag: boolean
+}
+
 interface MatchDetail {
   id: string
   overall_score: number
   underemployment_surfaced: boolean
   status: string
-  match_explanation: {
-    strong_dimensions: Dimension[]
-    partial_dimensions: Dimension[]
-    gap_dimensions: Dimension[]
-    ats_bypass_reasoning?: string
-    employer_facing_text: string
-    candidate_facing_text: string
-    bridge_suggestion?: string
-  }
+  match_explanation: MatchExplanation | MatchExplanation[]
   candidate: {
     id: string
     name: string
     email: string
-    candidate_profile: Array<{
-      degree: string | null
-      field_of_study: string | null
-      current_job_title: string | null
-      current_employer: string | null
-      years_of_experience: number | null
-      underemployment_flag: boolean
-    }>
-  }
+    candidate_profile: CandidateProfile | CandidateProfile[]
+  } | Array<{ id: string; name: string; email: string; candidate_profile: CandidateProfile | CandidateProfile[] }>
   role: { title: string; context_notes: string | null }
   role_capability_map: Array<{ dimensions: RoleDimension[] }>
 }
@@ -147,9 +151,15 @@ function MatchDetailPage() {
     </div>
   )
 
-  const exp = match.match_explanation
-  const candidate = match.candidate
-  const profile = candidate.candidate_profile[0]
+  const exp = Array.isArray(match.match_explanation)
+    ? match.match_explanation[0]
+    : match.match_explanation
+  const candidate = Array.isArray(match.candidate)
+    ? match.candidate[0]
+    : match.candidate
+  const profile = Array.isArray(candidate.candidate_profile)
+    ? candidate.candidate_profile[0]
+    : candidate.candidate_profile
   const score = Math.round(match.overall_score * 100)
   const name = candidate.name
   const allDimensions = [...exp.strong_dimensions, ...exp.partial_dimensions, ...exp.gap_dimensions]
